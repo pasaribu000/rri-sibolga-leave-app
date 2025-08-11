@@ -43,6 +43,22 @@
         }
         .modal-overlay {
             background-color: rgba(0, 0, 0, 0.5);
+            z-index: 100;
+        }
+        .draggable-modal-header {
+            cursor: move;
+        }
+        .resize-handle {
+            position: absolute;
+            width: 20px;
+            height: 20px;
+            right: -10px;
+            bottom: -10px;
+            cursor: nwse-resize;
+            /* Tambahkan visual handle untuk kejelasan */
+            border: 2px solid #1b73ba;
+            background-color: #fff;
+            border-radius: 50%;
         }
     </style>
 </head>
@@ -53,7 +69,6 @@
         <div class="container mx-auto flex flex-col md:flex-row justify-between items-center space-y-4 md:space-y-0">
             <!-- Logo and Title -->
             <div class="flex items-center space-x-4">
-                <!-- RRI Logo SVG Placeholder -->
                 <svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-radio-tower text-white">
                     <path d="M12 12V2"/>
                     <path d="M5 12C2.8 9.5 2 6 2 4c0-1.1.9-2 2-2h16c1.1 0 2 .9 2 2 0 2-2.8 5.5-5 8"/>
@@ -164,52 +179,56 @@
         <p>&copy; <span id="currentYear"></span> RRI Sibolga. All rights reserved.</p>
     </footer>
 
-    <!-- Edit Leave Modal -->
+    <!-- Edit Leave Modal (now draggable and resizable) -->
     <div id="editLeaveModal" class="fixed inset-0 z-[100] flex items-center justify-center hidden modal-overlay">
-        <div class="bg-white p-8 rounded-xl shadow-2xl max-w-md w-full m-4">
-            <div class="flex justify-between items-center mb-4">
+        <div id="modalContent" class="bg-white p-8 rounded-xl shadow-2xl relative" style="width: 400px; height: 600px;">
+            <div id="modalHeader" class="flex justify-between items-center mb-4 draggable-modal-header">
                 <h3 class="text-2xl font-bold text-gray-800">Edit Cuti Pegawai</h3>
                 <button onclick="closeEditModal()" class="text-gray-500 hover:text-gray-800 transition">
                     <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-x"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg>
                 </button>
             </div>
-            <p id="modalEmployeeName" class="text-lg font-semibold text-gray-600 mb-4"></p>
-            
-            <div class="space-y-4">
-                <div class="flex flex-col">
-                    <label for="annualLeave" class="text-sm font-medium text-gray-700">Cuti Tahunan Terpakai (hari)</label>
-                    <input type="number" id="annualLeave" class="mt-1 p-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#1b73ba]" min="0">
+            <div id="modalBody" class="h-[calc(100%-80px)] overflow-y-auto">
+                <p id="modalEmployeeName" class="text-lg font-semibold text-gray-600 mb-4"></p>
+                
+                <div class="space-y-4">
+                    <div class="flex flex-col">
+                        <label for="annualLeave" class="text-sm font-medium text-gray-700">Cuti Tahunan Terpakai (hari)</label>
+                        <input type="number" id="annualLeave" class="mt-1 p-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#1b73ba]" min="0">
+                    </div>
+                    <div class="flex flex-col">
+                        <label for="longLeave" class="text-sm font-medium text-gray-700">Cuti Besar Terpakai (bulan)</label>
+                        <input type="number" id="longLeave" class="mt-1 p-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#1b73ba]" min="0">
+                    </div>
+                    <div class="flex flex-col">
+                        <label for="sickLeave" class="text-sm font-medium text-gray-700">Cuti Sakit Terpakai (hari)</label>
+                        <input type="number" id="sickLeave" class="mt-1 p-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#1b73ba]" min="0">
+                    </div>
+                    <div class="flex flex-col">
+                        <label for="maternityLeave" class="text-sm font-medium text-gray-700">Cuti Melahirkan Terpakai (bulan)</label>
+                        <input type="number" id="maternityLeave" class="mt-1 p-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#1b73ba]" min="0">
+                    </div>
+                    <div class="flex flex-col">
+                        <label for="importantLeave" class="text-sm font-medium text-gray-700">Cuti Alasan Penting Terpakai (bulan)</label>
+                        <input type="number" id="importantLeave" class="mt-1 p-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#1b73ba]" min="0">
+                    </div>
+                    <div class="flex flex-col">
+                        <label for="outOfPocketLeave" class="text-sm font-medium text-gray-700">Cuti di Luar Tanggungan Terpakai (tahun)</label>
+                        <input type="number" id="outOfPocketLeave" class="mt-1 p-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#1b73ba]" min="0">
+                    </div>
+                    <div class="flex flex-col">
+                        <label for="collectiveLeave" class="text-sm font-medium text-gray-700">Cuti Bersama Terpakai (hari)</label>
+                        <input type="number" id="collectiveLeave" class="mt-1 p-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#1b73ba]" min="0">
+                    </div>
                 </div>
-                <div class="flex flex-col">
-                    <label for="longLeave" class="text-sm font-medium text-gray-700">Cuti Besar Terpakai (bulan)</label>
-                    <input type="number" id="longLeave" class="mt-1 p-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#1b73ba]" min="0">
-                </div>
-                <div class="flex flex-col">
-                    <label for="sickLeave" class="text-sm font-medium text-gray-700">Cuti Sakit Terpakai (hari)</label>
-                    <input type="number" id="sickLeave" class="mt-1 p-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#1b73ba]" min="0">
-                </div>
-                <div class="flex flex-col">
-                    <label for="maternityLeave" class="text-sm font-medium text-gray-700">Cuti Melahirkan Terpakai (bulan)</label>
-                    <input type="number" id="maternityLeave" class="mt-1 p-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#1b73ba]" min="0">
-                </div>
-                <div class="flex flex-col">
-                    <label for="importantLeave" class="text-sm font-medium text-gray-700">Cuti Alasan Penting Terpakai (bulan)</label>
-                    <input type="number" id="importantLeave" class="mt-1 p-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#1b73ba]" min="0">
-                </div>
-                <div class="flex flex-col">
-                    <label for="outOfPocketLeave" class="text-sm font-medium text-gray-700">Cuti di Luar Tanggungan Terpakai (tahun)</label>
-                    <input type="number" id="outOfPocketLeave" class="mt-1 p-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#1b73ba]" min="0">
-                </div>
-                <div class="flex flex-col">
-                    <label for="collectiveLeave" class="text-sm font-medium text-gray-700">Cuti Bersama Terpakai (hari)</label>
-                    <input type="number" id="collectiveLeave" class="mt-1 p-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#1b73ba]" min="0">
+                
+                <div class="mt-6 flex justify-end space-x-2">
+                    <button onclick="closeEditModal()" class="bg-gray-300 text-gray-800 px-4 py-2 rounded-full font-semibold hover:bg-gray-400 transition">Batal</button>
+                    <button id="saveLeaveBtn" class="bg-[#1b73ba] text-white px-4 py-2 rounded-full font-semibold hover:bg-[#0a3d62] transition">Simpan Perubahan</button>
                 </div>
             </div>
-            
-            <div class="mt-6 flex justify-end space-x-2">
-                <button onclick="closeEditModal()" class="bg-gray-300 text-gray-800 px-4 py-2 rounded-full font-semibold hover:bg-gray-400 transition">Batal</button>
-                <button id="saveLeaveBtn" class="bg-[#1b73ba] text-white px-4 py-2 rounded-full font-semibold hover:bg-[#0a3d62] transition">Simpan Perubahan</button>
-            </div>
+            <!-- Resize handle -->
+            <div id="resizeHandle" class="resize-handle"></div>
         </div>
     </div>
     
@@ -354,12 +373,21 @@
             document.getElementById('currentTime').textContent = now.toLocaleTimeString('id-ID', optionsTime);
         }
         
-        // Modal functions
+        // Modal functions (diperbarui untuk draggable dan resizable)
         const modal = document.getElementById('editLeaveModal');
+        const modalContent = document.getElementById('modalContent');
+        const modalHeader = document.getElementById('modalHeader');
+        const resizeHandle = document.getElementById('resizeHandle');
         const modalEmployeeName = document.getElementById('modalEmployeeName');
         const saveLeaveBtn = document.getElementById('saveLeaveBtn');
         let currentEmployeeIndex = -1;
 
+        // Variabel untuk fungsionalitas drag
+        let isDragging = false;
+        let isResizing = false;
+        let initialX, initialY, initialWidth, initialHeight;
+
+        // Fungsi untuk membuka modal
         function openEditModal(index) {
             currentEmployeeIndex = index;
             const employee = employees[index];
@@ -372,14 +400,20 @@
             document.getElementById('importantLeave').value = employee.leaveUsed.important;
             document.getElementById('outOfPocketLeave').value = employee.leaveUsed.outOfPocket;
             document.getElementById('collectiveLeave').value = employee.leaveUsed.collective;
-
+            
             modal.classList.remove('hidden');
+            // Menempatkan modal di tengah-tengah saat dibuka
+            modalContent.style.left = (window.innerWidth / 2 - modalContent.offsetWidth / 2) + 'px';
+            modalContent.style.top = (window.innerHeight / 2 - modalContent.offsetHeight / 2) + 'px';
+            modalContent.style.position = 'absolute';
         }
 
+        // Fungsi untuk menutup modal
         function closeEditModal() {
             modal.classList.add('hidden');
         }
 
+        // Fungsi untuk menampilkan pesan
         function showMessage(message, isSuccess = true) {
             const msgBox = document.getElementById('messageBox');
             msgBox.textContent = message;
@@ -395,6 +429,56 @@
                 msgBox.classList.add('translate-x-full', 'opacity-0');
             }, 3000);
         }
+
+        // Logika drag
+        modalHeader.addEventListener('mousedown', dragStart);
+        resizeHandle.addEventListener('mousedown', resizeStart);
+
+        function dragStart(e) {
+            e.preventDefault();
+            isDragging = true;
+            initialX = e.clientX;
+            initialY = e.clientY;
+            initialLeft = modalContent.offsetLeft;
+            initialTop = modalContent.offsetTop;
+        }
+
+        function resizeStart(e) {
+            e.preventDefault();
+            isResizing = true;
+            initialX = e.clientX;
+            initialY = e.clientY;
+            initialWidth = modalContent.offsetWidth;
+            initialHeight = modalContent.offsetHeight;
+        }
+
+        document.addEventListener('mousemove', (e) => {
+            if (isDragging) {
+                const dx = e.clientX - initialX;
+                const dy = e.clientY - initialY;
+                const newLeft = initialLeft + dx;
+                const newTop = initialTop + dy;
+
+                // Batasan agar modal tidak keluar layar
+                modalContent.style.left = `${Math.min(Math.max(newLeft, 0), window.innerWidth - modalContent.offsetWidth)}px`;
+                modalContent.style.top = `${Math.min(Math.max(newTop, 0), window.innerHeight - modalContent.offsetHeight)}px`;
+            }
+            if (isResizing) {
+                const dx = e.clientX - initialX;
+                const dy = e.clientY - initialY;
+                const newWidth = initialWidth + dx;
+                const newHeight = initialHeight + dy;
+
+                // Batasan ukuran minimum
+                modalContent.style.width = `${Math.max(newWidth, 300)}px`;
+                modalContent.style.height = `${Math.max(newHeight, 400)}px`;
+            }
+        });
+
+        document.addEventListener('mouseup', () => {
+            isDragging = false;
+            isResizing = false;
+        });
 
         saveLeaveBtn.addEventListener('click', () => {
             if (currentEmployeeIndex !== -1) {
