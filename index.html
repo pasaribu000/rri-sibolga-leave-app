@@ -166,7 +166,7 @@
 
     <!-- Edit Leave Modal -->
     <div id="editLeaveModal" class="fixed inset-0 z-[100] flex items-center justify-center hidden modal-overlay">
-        <div class="bg-white p-8 rounded-xl shadow-2xl max-w-lg w-full m-4">
+        <div class="bg-white p-8 rounded-xl shadow-2xl max-w-md w-full m-4">
             <div class="flex justify-between items-center mb-4">
                 <h3 class="text-2xl font-bold text-gray-800">Edit Cuti Pegawai</h3>
                 <button onclick="closeEditModal()" class="text-gray-500 hover:text-gray-800 transition">
@@ -405,7 +405,7 @@
                 employee.leaveUsed.sick = parseInt(document.getElementById('sickLeave').value) || 0;
                 employee.leaveUsed.maternity = parseInt(document.getElementById('maternityLeave').value) || 0;
                 employee.leaveUsed.important = parseInt(document.getElementById('importantLeave').value) || 0;
-                employee.leaveUsed.outOfPocket = parseInt(document.getElementById('outOfPocketLeave').value) || 0;
+                employee.leaveUsed.outOfPocketLeave = parseInt(document.getElementById('outOfPocketLeave').value) || 0;
                 employee.leaveUsed.collective = parseInt(document.getElementById('collectiveLeave').value) || 0;
                 
                 renderEmployees(isAdmin); // Update tampilan
