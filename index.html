@@ -27,6 +27,20 @@
             transform: translateY(-5px);
             box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
         }
+        .shimmer {
+            animation: pulse 1.5s infinite;
+        }
+        @keyframes pulse {
+            0% {
+                background-color: #e2e8f0;
+            }
+            50% {
+                background-color: #cbd5e1;
+            }
+            100% {
+                background-color: #e2e8f0;
+            }
+        }
     </style>
 </head>
 <body>
@@ -129,7 +143,7 @@
         <section class="mb-8">
             <h2 class="text-2xl md:text-3xl font-bold text-gray-800 mb-4 text-center md:text-left">Pegawai Sedang Cuti Hari Ini</h2>
             <div id="onLeaveEmployees" class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
-                <!-- Data will be populated by JavaScript -->
+                <p class="text-center text-gray-500 col-span-full">Memuat data...</p>
             </div>
         </section>
 
@@ -149,6 +163,9 @@
     </footer>
 
     <script>
+        // GANTI URL INI dengan URL dari deployment Google Apps Script Anda
+        const GOOGLE_APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbzAz_lj8BtxjqZoaxqSWEKAgBiEPmgiXcB1cb3IopLr3bdso3ra0i4cqsX4xuW989_j/exec';
+
         // Data Pegawai
         const employees = [
             "Yanni Peter Latuheru, S.Sos", "Ichwansyah Pohan, S.E", "Rosmawan Hutabarat, S.E", "Viktor Hamonangan Hutabarat",
@@ -169,12 +186,6 @@
             "Flora Susanti Lumbantobing", "Ester Tampubolon", "Bernard Adi Saputra Saragih", "Felix Simatupang",
             "Mukhtadinul Ikhsan", "Halasson Siahaan", "Mahar Yusuf Sinaga", "Irfan Sihotang",
             "Rizky Ramadhan Piliang", "Andrian Mendrofa"
-        ];
-
-        // Contoh data pegawai yang sedang cuti hari ini (Data mock)
-        const onLeaveToday = [
-            { name: "Citra Priadi Pasaribu, S.IP", leaveType: "Cuti Tahunan" },
-            { name: "Anna Theresia Simatupang, S.Sos", leaveType: "Cuti Melahirkan" },
         ];
 
         // Render daftar pegawai
@@ -205,21 +216,34 @@
             });
         }
 
-        // Render daftar pegawai yang sedang cuti
-        function renderOnLeaveEmployees() {
+        // Fungsi baru untuk mengambil data cuti dari Google Apps Script
+        async function fetchOnLeaveEmployees() {
             const onLeaveContainer = document.getElementById('onLeaveEmployees');
-            if (onLeaveToday.length === 0) {
-                onLeaveContainer.innerHTML = '<p class="text-gray-500 text-center italic">Tidak ada pegawai yang sedang cuti hari ini.</p>';
-            } else {
-                onLeaveToday.forEach(emp => {
-                    const card = document.createElement('div');
-                    card.className = 'bg-white p-4 rounded-xl shadow-md border border-gray-200 flex flex-col justify-center text-center';
-                    card.innerHTML = `
-                        <h3 class="text-xl font-semibold text-gray-800">${emp.name}</h3>
-                        <p class="text-sm text-gray-500">${emp.leaveType}</p>
-                    `;
-                    onLeaveContainer.appendChild(card);
-                });
+            onLeaveContainer.innerHTML = '<p class="text-center text-gray-500 col-span-full">Memuat data...</p>'; // Tampilkan status memuat
+
+            try {
+                // Lakukan fetch ke URL Google Apps Script
+                const response = await fetch(GOOGLE_APPS_SCRIPT_URL);
+                const onLeaveToday = await response.json();
+                
+                // Hapus status memuat dan render data yang diterima
+                onLeaveContainer.innerHTML = '';
+                if (onLeaveToday.length === 0) {
+                    onLeaveContainer.innerHTML = '<p class="text-gray-500 text-center italic col-span-full">Tidak ada pegawai yang sedang cuti hari ini.</p>';
+                } else {
+                    onLeaveToday.forEach(emp => {
+                        const card = document.createElement('div');
+                        card.className = 'bg-white p-4 rounded-xl shadow-md border border-gray-200 flex flex-col justify-center text-center';
+                        card.innerHTML = `
+                            <h3 class="text-xl font-semibold text-gray-800">${emp.name}</h3>
+                            <p class="text-sm text-gray-500">${emp.leaveType}</p>
+                        `;
+                        onLeaveContainer.appendChild(card);
+                    });
+                }
+            } catch (error) {
+                console.error("Gagal mengambil data cuti:", error);
+                onLeaveContainer.innerHTML = '<p class="text-red-500 text-center italic col-span-full">Gagal memuat data. Periksa URL Apps Script Anda.</p>';
             }
         }
         
@@ -247,7 +271,7 @@
             updateDateTime();
             setInterval(updateDateTime, 1000); // Perbarui waktu setiap detik
             renderEmployees(isAdmin); // Render daftar pegawai dengan role default (User)
-            renderOnLeaveEmployees(); // Render pegawai yang sedang cuti
+            fetchOnLeaveEmployees(); // Panggil fungsi baru untuk mengambil data cuti secara dinamis
             document.getElementById('currentYear').textContent = new Date().getFullYear();
         });
     </script>
