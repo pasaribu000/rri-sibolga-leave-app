@@ -69,16 +69,13 @@
         <div class="container mx-auto flex flex-col md:flex-row justify-between items-center space-y-4 md:space-y-0">
             <!-- Logo and Title -->
             <div class="flex items-center space-x-4">
-                <svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-radio-tower text-white">
-                    <path d="M12 12V2" />
-                    <path d="M5 12C2.8 9.5 2 6 2 4c0-1.1.9-2 2-2h16c1.1 0 2 .9 2 2 0 2-2.8 5.5-5 8" />
-                    <path d="M12 12v10" />
-                    <path d="M12 16v-4" />
-                    <path d="M12 22h0" />
-                    <path d="M5 12h14" />
-                    <path d="M22 22h-4v-6h4a2 2 0 0 1 2 2v2a2 2 0 0 1-2 2Z" />
-                    <path d="M2 16h4v6H2a2 2 0 0 1-2-2v-2a2 2 0 0 1 2-2Z" />
-                    <path d="M12 16H8v6h8v-6h-4Z" />
+                <!-- SVG Radio Logo Baru -->
+                <svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-white">
+                    <rect x="2" y="4" width="20" height="16" rx="2" ry="2" />
+                    <line x1="8" y1="9" x2="16" y2="9" />
+                    <line x1="8" y1="12" x2="16" y2="12" />
+                    <path d="M18 4a2 2 0 0 1 2 2v10a2 2 0 0 1-2 2" />
+                    <path d="M6 18c-1.1 0-2-.9-2-2v-4a2 2 0 0 1 2-2" />
                 </svg>
                 <h1 class="text-3xl font-bold">RRI Sibolga</h1>
             </div>
@@ -262,8 +259,9 @@
     <div id="messageBox" class="fixed bottom-4 right-4 p-4 rounded-xl shadow-lg text-white transition-all duration-300 transform translate-x-full opacity-0 z-[110]"></div>
 
     <script>
-        // URL Google Apps Script yang telah dideploy
-        const GOOGLE_APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbyxUisuzee1vO4_vbdN-I522fGfFB0OB4cpnn_iapiOpT0AwsJlDLxCElUCdIginA4fgg/exec';
+        // Ganti URL ini dengan URL Web App Google Apps Script Anda yang baru
+        // Anda bisa mendapatkan URL ini setelah melakukan "Deploy" di Google Apps Script
+        const GOOGLE_APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbyp-fZXwxgnrFuON-9t4cRllCoVLCGVykX5GtjK9iuq_qzuy6rsfpoEZeeCLHiV64Fm9A/exec';
         
         // Kata sandi untuk mode admin
         const ADMIN_PASSWORD = "rriadmin2025";
@@ -322,9 +320,16 @@
             while (retries < maxRetries) {
                 try {
                     const response = await fetch(`${GOOGLE_APPS_SCRIPT_URL}?action=getEmployees`);
-                    if (!response.ok) throw new Error('Network response was not ok');
+                    console.log('Fetching employee data from:', response.url);
+                    if (!response.ok) {
+                        const errorText = await response.text();
+                        console.error('Network response was not ok:', response.status, errorText);
+                        throw new Error(`Network response was not ok: ${response.statusText}`);
+                    }
 
                     const data = await response.json();
+                    console.log('Received data:', data);
+                    
                     if (data.status === 'success') {
                         employees = data.employees;
                         renderEmployees(isAdmin);
@@ -371,17 +376,25 @@
 
             while (retries < maxRetries) {
                 try {
+                    const payload = { action: 'updateLeave', data: updatedLeaveData };
+                    console.log('Sending payload:', JSON.stringify(payload)); // DEBUG: Tambahkan log untuk payload
                     const response = await fetch(GOOGLE_APPS_SCRIPT_URL, {
                         method: 'POST',
                         headers: {
                             'Content-Type': 'application/json',
                         },
-                        body: JSON.stringify({ action: 'updateLeave', data: updatedLeaveData }),
+                        body: JSON.stringify(payload),
                     });
 
-                    if (!response.ok) throw new Error('Network response was not ok');
+                    if (!response.ok) {
+                        const errorText = await response.text();
+                        console.error('Network response was not ok:', response.status, errorText);
+                        throw new Error(`Network response was not ok: ${response.statusText}`);
+                    }
 
                     const result = await response.json();
+                    console.log('Received save result:', result);
+                    
                     if (result.status === 'success') {
                         // Perbarui data lokal setelah berhasil disimpan
                         employee.leaveUsed = updatedLeaveData;
@@ -389,6 +402,7 @@
                         showMessageBox('Perubahan berhasil disimpan!', 'success');
                         return;
                     } else {
+                        console.error('Apps Script error:', result.message);
                         throw new Error(result.message || 'Failed to save changes.');
                     }
                 } catch (error) {
@@ -398,7 +412,7 @@
                         await new Promise(res => setTimeout(res, delay));
                         delay *= 2;
                     } else {
-                        showMessageBox(`Gagal menyimpan perubahan: ${error.message}`, 'error');
+                        showMessageBox(`Gagal menyimpan perubahan: ${error.message}. Mohon cek kembali deployment Google Apps Script Anda.`, 'error');
                     }
                 }
             }
@@ -411,8 +425,14 @@
             
             try {
                 const response = await fetch(`${GOOGLE_APPS_SCRIPT_URL}?action=getOnLeaveToday`);
-                if (!response.ok) throw new Error('Network response was not ok');
+                console.log('Fetching on-leave data from:', response.url);
+                if (!response.ok) {
+                    const errorText = await response.text();
+                    console.error('Network response was not ok:', response.status, errorText);
+                    throw new Error('Network response was not ok');
+                }
                 const data = await response.json();
+                console.log('Received on-leave data:', data);
 
                 onLeaveContainer.innerHTML = '';
                 if (data.status === 'success' && data.employees.length > 0) {
@@ -430,7 +450,7 @@
                 }
             } catch (error) {
                 console.error("Gagal mengambil data cuti hari ini:", error);
-                onLeaveContainer.innerHTML = `<p class="text-red-500 text-center italic col-span-full">Gagal memuat data cuti hari ini.</p>`;
+                onLeaveContainer.innerHTML = `<p class="text-red-500 text-center italic col-span-full">Gagal memuat data cuti hari ini: ${error.message}</p>`;
             }
         }
 
