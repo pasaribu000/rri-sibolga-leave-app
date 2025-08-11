@@ -1,0 +1,255 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Aplikasi Cuti RRI Sibolga</title>
+    <!-- Tailwind CSS via CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Lucide Icons -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap');
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #f0f4f8; /* Warna latar belakang cerah */
+        }
+        .header {
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+            background-image: linear-gradient(to right, #0a3d62, #1b73ba); /* Gradient warna RRI */
+        }
+        .card {
+            background-color: #ffffff;
+            transition: transform 0.2s ease-in-out, box-shadow 0.2s ease-in-out;
+            cursor: pointer;
+        }
+        .card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+        }
+    </style>
+</head>
+<body>
+
+    <!-- Header Section -->
+    <header class="header sticky top-0 z-50 text-white p-4">
+        <div class="container mx-auto flex flex-col md:flex-row justify-between items-center space-y-4 md:space-y-0">
+            <!-- Logo and Title -->
+            <div class="flex items-center space-x-4">
+                <!-- RRI Logo SVG Placeholder -->
+                <svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-radio-tower text-white">
+                    <path d="M12 12V2"/>
+                    <path d="M5 12C2.8 9.5 2 6 2 4c0-1.1.9-2 2-2h16c1.1 0 2 .9 2 2 0 2-2.8 5.5-5 8"/>
+                    <path d="M12 12v10"/>
+                    <path d="M12 16v-4"/>
+                    <path d="M12 22h0"/>
+                    <path d="M5 12h14"/>
+                    <path d="M22 22h-4v-6h4a2 2 0 0 1 2 2v2a2 2 0 0 1-2 2Z"/>
+                    <path d="M2 16h4v6H2a2 2 0 0 1-2-2v-2a2 2 0 0 1 2-2Z"/>
+                    <path d="M12 16H8v6h8v-6h-4Z"/>
+                </svg>
+                <h1 class="text-3xl font-bold">RRI Sibolga</h1>
+            </div>
+
+            <!-- Date and Time -->
+            <div class="text-center md:text-right">
+                <p id="currentDate" class="text-sm md:text-base"></p>
+                <p id="currentTime" class="text-xl md:text-2xl font-semibold"></p>
+            </div>
+            
+            <!-- User Role Toggle (Mock) -->
+            <div class="flex items-center space-x-2">
+                <span class="text-sm font-medium">Tampilan:</span>
+                <button id="toggleRoleBtn" class="bg-white text-[#0a3d62] px-4 py-2 rounded-full font-semibold shadow-md hover:bg-gray-100 transition">User</button>
+            </div>
+        </div>
+
+        <!-- Buttons -->
+        <div class="container mx-auto mt-4 flex flex-col md:flex-row justify-center space-y-2 md:space-y-0 md:space-x-4">
+            <a href="https://drive.google.com/drive/folders/YOUR_DRIVE_LINK" target="_blank" class="bg-white text-[#1b73ba] font-bold px-6 py-3 rounded-full text-center hover:bg-gray-200 transition shadow-lg flex items-center justify-center space-x-2">
+                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-folder-down"><path d="M4 20h16a2 2 0 0 0 2-2V8a2 2 0 0 0-2-2h-7.93a2 2 0 0 1-1.66-.9l-.82-1.2A2 2 0 0 0 7.93 2H4a2 2 0 0 0-2 2v14c0 1.1.9 2 2 2Z"/><path d="m6 16 6 6 6-6"/><path d="M12 12v10"/></svg>
+                <span>Unduh Persyaratan</span>
+            </a>
+            <!-- Tautan ini diperbarui dengan URL Google Apps Script yang Anda berikan -->
+            <a href="https://script.google.com/macros/s/AKfycbzNVYdnMVB9iVsM7qSd6nfstYbDjs3K8errLarHr0hjV4-oYRY3kA2DiqIeymDd3F9E/exec" target="_blank" class="bg-white text-[#1b73ba] font-bold px-6 py-3 rounded-full text-center hover:bg-gray-200 transition shadow-lg flex items-center justify-center space-x-2">
+                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-form-input"><rect width="20" height="12" x="2" y="6" rx="2"/><path d="M12 12h.01"/><path d="M17 12h.01"/><path d="M7 12h.01"/></svg>
+                <span>Ajukan Cuti</span>
+            </a>
+        </div>
+    </header>
+
+    <!-- Main Content -->
+    <main class="container mx-auto p-4 md:p-8">
+
+        <!-- Role-based Controls (Admin only) -->
+        <div id="adminControls" class="mb-8 p-6 bg-yellow-100 border-l-4 border-yellow-500 text-yellow-800 rounded-lg hidden">
+            <div class="flex items-center space-x-2">
+                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-shield-check"><path d="M20 13c0 5-3.5 7.5-7.66 8.95a1 1 0 0 1-.67-.01C7.5 20.5 4 18 4 13V6a8 8 0 0 1 16 0"/><path d="m9 12 2 2 4-4"/></svg>
+                <p class="font-bold">Mode Admin</p>
+            </div>
+            <p class="mt-2">Anda dapat mengelola data pegawai. Pengajuan cuti akan dikelola melalui email dan Google Spreadsheet.</p>
+        </div>
+        
+        <!-- Leave Types Section -->
+        <section class="mb-8">
+            <h2 class="text-2xl md:text-3xl font-bold text-gray-800 mb-4 text-center md:text-left">Jenis & Kuota Cuti</h2>
+            <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4">
+                <div class="bg-white p-4 rounded-xl shadow-md border border-gray-200 text-center">
+                    <p class="text-lg font-semibold text-gray-600">Tahunan</p>
+                    <p class="text-4xl font-bold text-[#1b73ba]">12 <span class="text-base font-normal">hari</span></p>
+                </div>
+                <div class="bg-white p-4 rounded-xl shadow-md border border-gray-200 text-center">
+                    <p class="text-lg font-semibold text-gray-600">Besar</p>
+                    <p class="text-4xl font-bold text-[#1b73ba]">3 <span class="text-base font-normal">bulan</span></p>
+                </div>
+                <div class="bg-white p-4 rounded-xl shadow-md border border-gray-200 text-center">
+                    <p class="text-lg font-semibold text-gray-600">Sakit</p>
+                    <p class="text-4xl font-bold text-[#1b73ba]">14 <span class="text-base font-normal">hari</span></p>
+                </div>
+                <div class="bg-white p-4 rounded-xl shadow-md border border-gray-200 text-center">
+                    <p class="text-lg font-semibold text-gray-600">Melahirkan</p>
+                    <p class="text-4xl font-bold text-[#1b73ba]">3 <span class="text-base font-normal">bulan</span></p>
+                </div>
+                <div class="bg-white p-4 rounded-xl shadow-md border border-gray-200 text-center">
+                    <p class="text-lg font-semibold text-gray-600">Alasan Penting</p>
+                    <p class="text-4xl font-bold text-[#1b73ba]">1 <span class="text-base font-normal">bulan</span></p>
+                </div>
+                <div class="bg-white p-4 rounded-xl shadow-md border border-gray-200 text-center">
+                    <p class="text-lg font-semibold text-gray-600">Di Luar Tanggungan</p>
+                    <p class="text-4xl font-bold text-[#1b73ba]">3 <span class="text-base font-normal">tahun</span></p>
+                </div>
+                <div class="bg-white p-4 rounded-xl shadow-md border border-gray-200 text-center">
+                    <p class="text-lg font-semibold text-gray-600">Bersama</p>
+                    <p class="text-4xl font-bold text-[#1b73ba]">7 <span class="text-base font-normal">hari</span></p>
+                </div>
+            </div>
+        </section>
+
+        <!-- On-Leave Employees Section -->
+        <section class="mb-8">
+            <h2 class="text-2xl md:text-3xl font-bold text-gray-800 mb-4 text-center md:text-left">Pegawai Sedang Cuti Hari Ini</h2>
+            <div id="onLeaveEmployees" class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+                <!-- Data will be populated by JavaScript -->
+            </div>
+        </section>
+
+        <!-- Employee List Section -->
+        <section>
+            <h2 class="text-2xl md:text-3xl font-bold text-gray-800 mb-4 text-center md:text-left">Daftar Pegawai</h2>
+            <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4" id="employeeGrid">
+                <!-- Employee cards will be populated by JavaScript -->
+            </div>
+        </section>
+
+    </main>
+
+    <!-- Footer -->
+    <footer class="bg-gray-800 text-white text-center p-4 mt-8">
+        <p>&copy; <span id="currentYear"></span> RRI Sibolga. All rights reserved.</p>
+    </footer>
+
+    <script>
+        // Data Pegawai
+        const employees = [
+            "Yanni Peter Latuheru, S.Sos", "Ichwansyah Pohan, S.E", "Rosmawan Hutabarat, S.E", "Viktor Hamonangan Hutabarat",
+            "Khairil", "Vivi Tri Doharny Daulay", "Diskatarisa Hutabarat", "Novita Sari Putri, S.E",
+            "Silverius Hamonangan P. Purba, S.Sos", "Frans Martuani Sinaga, S.M", "Ade Wulan Septyaningsih, S.IP",
+            "Nurhamni Ichwarti, S.Sos", "Citra Priadi Pasaribu, S.IP", "Azis Fahri Tanjung, S.Kom",
+            "Annisa Lestari Nasution, A.Md.Ak", "Putri Andriani, A.Md.Ak", "Mahani Aprilia, A.Md.Ak",
+            "Idola Pratiwi Sinaga, A.Md.Pjk", "Ray Wiranta, A.Md.A.B", "Indah Farima Putri, A.Md",
+            "Hans Pierre Sitohang, A.Md", "Sopiah Hasibuan, A.Md", "Aziziah Khurfatul Janah, A.Md.Ds",
+            "Astrid Khairani Sinaga, A.Md", "Intan Friskila Hondro, A.Md", "Anna Theresia Simatupang, S.Sos",
+            "Desi Suriani Pasaribu, S.E", "Rindu Fatmawaty, S.H", "Gerhanawati, S.E", "Ismail Marzuki, S.Sos",
+            "Ronny Ferdian, S.E", "Safran Nuh Nasution, S.T", "M. Khalis Pasaribu, S.Ikom", "Eko Putra Hutabarat, A.Md",
+            "Ahmad Ridho Siregar, A.Md.T", "Ahlis Jami'ah Damanik, A.Md.Kom", "Deliana Nasution",
+            "Widya Sartika Nasution", "Paulus Hadi", "Ahmad Ferdian", "Anhar Rianto Pasaribu",
+            "Deny Siahaan", "Abdul Jalil", "Dedi Hariadi", "Edi Suheri", "Muafdan Jega Joyful Rom Sihotang",
+            "James Fransiskus Jonni Sihombing", "Martha Monica Putri Siahaan, S.T", "Erni Sasmita, S.E",
+            "Wilson Pangihutan Siregar", "Welly Boy Simatupang, S.E", "Eva Meylina Siahaan",
+            "Flora Susanti Lumbantobing", "Ester Tampubolon", "Bernard Adi Saputra Saragih", "Felix Simatupang",
+            "Mukhtadinul Ikhsan", "Halasson Siahaan", "Mahar Yusuf Sinaga", "Irfan Sihotang",
+            "Rizky Ramadhan Piliang", "Andrian Mendrofa"
+        ];
+
+        // Contoh data pegawai yang sedang cuti hari ini (Data mock)
+        const onLeaveToday = [
+            { name: "Citra Priadi Pasaribu, S.IP", leaveType: "Cuti Tahunan" },
+            { name: "Anna Theresia Simatupang, S.Sos", leaveType: "Cuti Melahirkan" },
+        ];
+
+        // Render daftar pegawai
+        function renderEmployees(isAdmin) {
+            const employeeGrid = document.getElementById('employeeGrid');
+            employeeGrid.innerHTML = ''; // Kosongkan grid sebelum merender
+            employees.forEach(name => {
+                const kuotaCuti = Math.floor(Math.random() * 12) + 1; // Kuota Cuti Tahunan acak
+                const cutiTerpakai = Math.floor(Math.random() * (kuotaCuti + 1)); // Cuti terpakai acak
+                const card = document.createElement('div');
+                card.className = 'card p-6 rounded-2xl shadow-lg border border-gray-200 flex flex-col justify-between';
+                card.innerHTML = `
+                    <div>
+                        <h3 class="text-xl font-semibold text-gray-800">${name}</h3>
+                        <p class="text-sm text-gray-500 mt-1">Kuota Cuti Tahunan: <span class="font-bold">${kuotaCuti}</span> hari</p>
+                        <p class="text-sm text-gray-500">Cuti Terpakai: <span class="font-bold text-red-500">${cutiTerpakai}</span> hari</p>
+                    </div>
+                    ${isAdmin ? `
+                    <div class="mt-4 text-right">
+                        <button class="bg-[#1b73ba] text-white px-4 py-2 rounded-full text-sm font-medium hover:bg-[#0a3d62] transition">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-pencil inline-block mr-1"><path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/><path d="m15 5 4 4"/></svg>
+                            Edit
+                        </button>
+                    </div>
+                    ` : ''}
+                `;
+                employeeGrid.appendChild(card);
+            });
+        }
+
+        // Render daftar pegawai yang sedang cuti
+        function renderOnLeaveEmployees() {
+            const onLeaveContainer = document.getElementById('onLeaveEmployees');
+            if (onLeaveToday.length === 0) {
+                onLeaveContainer.innerHTML = '<p class="text-gray-500 text-center italic">Tidak ada pegawai yang sedang cuti hari ini.</p>';
+            } else {
+                onLeaveToday.forEach(emp => {
+                    const card = document.createElement('div');
+                    card.className = 'bg-white p-4 rounded-xl shadow-md border border-gray-200 flex flex-col justify-center text-center';
+                    card.innerHTML = `
+                        <h3 class="text-xl font-semibold text-gray-800">${emp.name}</h3>
+                        <p class="text-sm text-gray-500">${emp.leaveType}</p>
+                    `;
+                    onLeaveContainer.appendChild(card);
+                });
+            }
+        }
+        
+        // Atur tanggal dan waktu real-time
+        function updateDateTime() {
+            const now = new Date();
+            const optionsDate = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' };
+            const optionsTime = { hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false };
+            document.getElementById('currentDate').textContent = now.toLocaleDateString('id-ID', optionsDate);
+            document.getElementById('currentTime').textContent = now.toLocaleTimeString('id-ID', optionsTime);
+        }
+
+        // Event listener untuk tombol toggle role
+        const toggleRoleBtn = document.getElementById('toggleRoleBtn');
+        let isAdmin = false;
+        toggleRoleBtn.addEventListener('click', () => {
+            isAdmin = !isAdmin;
+            toggleRoleBtn.textContent = isAdmin ? 'Admin' : 'User';
+            document.getElementById('adminControls').classList.toggle('hidden', !isAdmin);
+            renderEmployees(isAdmin);
+        });
+
+        // Inisialisasi
+        document.addEventListener('DOMContentLoaded', () => {
+            updateDateTime();
+            setInterval(updateDateTime, 1000); // Perbarui waktu setiap detik
+            renderEmployees(isAdmin); // Render daftar pegawai dengan role default (User)
+            renderOnLeaveEmployees(); // Render pegawai yang sedang cuti
+            document.getElementById('currentYear').textContent = new Date().getFullYear();
+        });
+    </script>
+</body>
+</html>
