@@ -167,7 +167,7 @@
         <!-- Employee List Section -->
         <section>
             <h2 class="text-2xl md:text-3xl font-bold text-gray-800 mb-4 text-center md:text-left">Daftar Pegawai</h2>
-            <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4" id="employeeGrid">
+            <div id="employeeGrid" class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
                 <!-- Employee cards will be populated by JavaScript -->
             </div>
         </section>
@@ -237,81 +237,41 @@
 
     <script>
         // GANTI URL INI dengan URL dari deployment Google Apps Script Anda
-        const GOOGLE_APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbzAz_lj8BtxjqZoaxqSWEKAgBiEPmgiXcB1cb3IopLr3bdso3ra0i4cqsX4xuW989_j/exec';
+        const GOOGLE_APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbxDskMwrmIlh0fy1uRLl9vzIKRkPceLvXEvIqJa6TOIfB82huEV1WusNm2DUh_eyz4r/exec';
+        
+        let employees = []; // Sekarang data akan diambil dari server
+        let isAdmin = false; // Status role default
+        let currentEmployeeIndex = -1; // Index pegawai yang sedang diedit
 
-        // Data Pegawai (DIUBAH MENJADI ARRAY OBJEK)
-        let employees = [
-            { name: "Yanni Peter Latuheru, S.Sos", leaveUsed: { annual: 3, long: 0, sick: 1, maternity: 0, important: 0, outOfPocket: 0, collective: 0 } },
-            { name: "Ichwansyah Pohan, S.E", leaveUsed: { annual: 5, long: 0, sick: 0, maternity: 0, important: 0, outOfPocket: 0, collective: 0 } },
-            { name: "Rosmawan Hutabarat, S.E", leaveUsed: { annual: 2, long: 0, sick: 0, maternity: 0, important: 0, outOfPocket: 0, collective: 0 } },
-            { name: "Viktor Hamonangan Hutabarat", leaveUsed: { annual: 0, long: 0, sick: 0, maternity: 0, important: 0, outOfPocket: 0, collective: 0 } },
-            { name: "Khairil", leaveUsed: { annual: 8, long: 0, sick: 2, maternity: 0, important: 0, outOfPocket: 0, collective: 0 } },
-            { name: "Vivi Tri Doharny Daulay", leaveUsed: { annual: 0, long: 0, sick: 0, maternity: 0, important: 0, outOfPocket: 0, collective: 0 } },
-            { name: "Diskatarisa Hutabarat", leaveUsed: { annual: 1, long: 0, sick: 0, maternity: 0, important: 0, outOfPocket: 0, collective: 0 } },
-            { name: "Novita Sari Putri, S.E", leaveUsed: { annual: 0, long: 0, sick: 0, maternity: 0, important: 0, outOfPocket: 0, collective: 0 } },
-            { name: "Silverius Hamonangan P. Purba, S.Sos", leaveUsed: { annual: 0, long: 0, sick: 0, maternity: 0, important: 0, outOfPocket: 0, collective: 0 } },
-            { name: "Frans Martuani Sinaga, S.M", leaveUsed: { annual: 0, long: 0, sick: 0, maternity: 0, important: 0, outOfPocket: 0, collective: 0 } },
-            { name: "Ade Wulan Septyaningsih, S.IP", leaveUsed: { annual: 0, long: 0, sick: 0, maternity: 0, important: 0, outOfPocket: 0, collective: 0 } },
-            { name: "Nurhamni Ichwarti, S.Sos", leaveUsed: { annual: 0, long: 0, sick: 0, maternity: 0, important: 0, outOfPocket: 0, collective: 0 } },
-            { name: "Citra Priadi Pasaribu, S.IP", leaveUsed: { annual: 0, long: 0, sick: 0, maternity: 0, important: 0, outOfPocket: 0, collective: 0 } },
-            { name: "Azis Fahri Tanjung, S.Kom", leaveUsed: { annual: 0, long: 0, sick: 0, maternity: 0, important: 0, outOfPocket: 0, collective: 0 } },
-            { name: "Annisa Lestari Nasution, A.Md.Ak", leaveUsed: { annual: 0, long: 0, sick: 0, maternity: 0, important: 0, outOfPocket: 0, collective: 0 } },
-            { name: "Putri Andriani, A.Md.Ak", leaveUsed: { annual: 0, long: 0, sick: 0, maternity: 0, important: 0, outOfPocket: 0, collective: 0 } },
-            { name: "Mahani Aprilia, A.Md.Ak", leaveUsed: { annual: 0, long: 0, sick: 0, maternity: 0, important: 0, outOfPocket: 0, collective: 0 } },
-            { name: "Idola Pratiwi Sinaga, A.Md.Pjk", leaveUsed: { annual: 0, long: 0, sick: 0, maternity: 0, important: 0, outOfPocket: 0, collective: 0 } },
-            { name: "Ray Wiranta, A.Md.A.B", leaveUsed: { annual: 0, long: 0, sick: 0, maternity: 0, important: 0, outOfPocket: 0, collective: 0 } },
-            { name: "Indah Farima Putri, A.Md", leaveUsed: { annual: 0, long: 0, sick: 0, maternity: 0, important: 0, outOfPocket: 0, collective: 0 } },
-            { name: "Hans Pierre Sitohang, A.Md", leaveUsed: { annual: 0, long: 0, sick: 0, maternity: 0, important: 0, outOfPocket: 0, collective: 0 } },
-            { name: "Sopiah Hasibuan, A.Md", leaveUsed: { annual: 0, long: 0, sick: 0, maternity: 0, important: 0, outOfPocket: 0, collective: 0 } },
-            { name: "Aziziah Khurfatul Janah, A.Md.Ds", leaveUsed: { annual: 0, long: 0, sick: 0, maternity: 0, important: 0, outOfPocket: 0, collective: 0 } },
-            { name: "Astrid Khairani Sinaga, A.Md", leaveUsed: { annual: 0, long: 0, sick: 0, maternity: 0, important: 0, outOfPocket: 0, collective: 0 } },
-            { name: "Intan Friskila Hondro, A.Md", leaveUsed: { annual: 0, long: 0, sick: 0, maternity: 0, important: 0, outOfPocket: 0, collective: 0 } },
-            { name: "Anna Theresia Simatupang, S.Sos", leaveUsed: { annual: 0, long: 0, sick: 0, maternity: 0, important: 0, outOfPocket: 0, collective: 0 } },
-            { name: "Desi Suriani Pasaribu, S.E", leaveUsed: { annual: 0, long: 0, sick: 0, maternity: 0, important: 0, outOfPocket: 0, collective: 0 } },
-            { name: "Rindu Fatmawaty, S.H", leaveUsed: { annual: 0, long: 0, sick: 0, maternity: 0, important: 0, outOfPocket: 0, collective: 0 } },
-            { name: "Gerhanawati, S.E", leaveUsed: { annual: 0, long: 0, sick: 0, maternity: 0, important: 0, outOfPocket: 0, collective: 0 } },
-            { name: "Ismail Marzuki, S.Sos", leaveUsed: { annual: 0, long: 0, sick: 0, maternity: 0, important: 0, outOfPocket: 0, collective: 0 } },
-            { name: "Ronny Ferdian, S.E", leaveUsed: { annual: 0, long: 0, sick: 0, maternity: 0, important: 0, outOfPocket: 0, collective: 0 } },
-            { name: "Safran Nuh Nasution, S.T", leaveUsed: { annual: 0, long: 0, sick: 0, maternity: 0, important: 0, outOfPocket: 0, collective: 0 } },
-            { name: "M. Khalis Pasaribu, S.Ikom", leaveUsed: { annual: 0, long: 0, sick: 0, maternity: 0, important: 0, outOfPocket: 0, collective: 0 } },
-            { name: "Eko Putra Hutabarat, A.Md", leaveUsed: { annual: 0, long: 0, sick: 0, maternity: 0, important: 0, outOfPocket: 0, collective: 0 } },
-            { name: "Ahmad Ridho Siregar, A.Md.T", leaveUsed: { annual: 0, long: 0, sick: 0, maternity: 0, important: 0, outOfPocket: 0, collective: 0 } },
-            { name: "Ahlis Jami'ah Damanik, A.Md.Kom", leaveUsed: { annual: 0, long: 0, sick: 0, maternity: 0, important: 0, outOfPocket: 0, collective: 0 } },
-            { name: "Deliana Nasution", leaveUsed: { annual: 0, long: 0, sick: 0, maternity: 0, important: 0, outOfPocket: 0, collective: 0 } },
-            { name: "Widya Sartika Nasution", leaveUsed: { annual: 0, long: 0, sick: 0, maternity: 0, important: 0, outOfPocket: 0, collective: 0 } },
-            { name: "Paulus Hadi", leaveUsed: { annual: 0, long: 0, sick: 0, maternity: 0, important: 0, outOfPocket: 0, collective: 0 } },
-            { name: "Ahmad Ferdian", leaveUsed: { annual: 0, long: 0, sick: 0, maternity: 0, important: 0, outOfPocket: 0, collective: 0 } },
-            { name: "Anhar Rianto Pasaribu", leaveUsed: { annual: 0, long: 0, sick: 0, maternity: 0, important: 0, outOfPocket: 0, collective: 0 } },
-            { name: "Deny Siahaan", leaveUsed: { annual: 0, long: 0, sick: 0, maternity: 0, important: 0, outOfPocket: 0, collective: 0 } },
-            { name: "Abdul Jalil", leaveUsed: { annual: 0, long: 0, sick: 0, maternity: 0, important: 0, outOfPocket: 0, collective: 0 } },
-            { name: "Dedi Hariadi", leaveUsed: { annual: 0, long: 0, sick: 0, maternity: 0, important: 0, outOfPocket: 0, collective: 0 } },
-            { name: "Edi Suheri", leaveUsed: { annual: 0, long: 0, sick: 0, maternity: 0, important: 0, outOfPocket: 0, collective: 0 } },
-            { name: "Muafdan Jega Joyful Rom Sihotang", leaveUsed: { annual: 0, long: 0, sick: 0, maternity: 0, important: 0, outOfPocket: 0, collective: 0 } },
-            { name: "James Fransiskus Jonni Sihombing", leaveUsed: { annual: 0, long: 0, sick: 0, maternity: 0, important: 0, outOfPocket: 0, collective: 0 } },
-            { name: "Martha Monica Putri Siahaan, S.T", leaveUsed: { annual: 0, long: 0, sick: 0, maternity: 0, important: 0, outOfPocket: 0, collective: 0 } },
-            { name: "Erni Sasmita, S.E", leaveUsed: { annual: 0, long: 0, sick: 0, maternity: 0, important: 0, outOfPocket: 0, collective: 0 } },
-            { name: "Wilson Pangihutan Siregar", leaveUsed: { annual: 0, long: 0, sick: 0, maternity: 0, important: 0, outOfPocket: 0, collective: 0 } },
-            { name: "Welly Boy Simatupang, S.E", leaveUsed: { annual: 0, long: 0, sick: 0, maternity: 0, important: 0, outOfPocket: 0, collective: 0 } },
-            { name: "Eva Meylina Siahaan", leaveUsed: { annual: 0, long: 0, sick: 0, maternity: 0, important: 0, outOfPocket: 0, collective: 0 } },
-            { name: "Flora Susanti Lumbantobing", leaveUsed: { annual: 0, long: 0, sick: 0, maternity: 0, important: 0, outOfPocket: 0, collective: 0 } },
-            { name: "Ester Tampubolon", leaveUsed: { annual: 0, long: 0, sick: 0, maternity: 0, important: 0, outOfPocket: 0, collective: 0 } },
-            { name: "Bernard Adi Saputra Saragih", leaveUsed: { annual: 0, long: 0, sick: 0, maternity: 0, important: 0, outOfPocket: 0, collective: 0 } },
-            { name: "Felix Simatupang", leaveUsed: { annual: 0, long: 0, sick: 0, maternity: 0, important: 0, outOfPocket: 0, collective: 0 } },
-            { name: "Mukhtadinul Ikhsan", leaveUsed: { annual: 0, long: 0, sick: 0, maternity: 0, important: 0, outOfPocket: 0, collective: 0 } },
-            { name: "Halasson Siahaan", leaveUsed: { annual: 0, long: 0, sick: 0, maternity: 0, important: 0, outOfPocket: 0, collective: 0 } },
-            { name: "Mahar Yusuf Sinaga", leaveUsed: { annual: 0, long: 0, sick: 0, maternity: 0, important: 0, outOfPocket: 0, collective: 0 } },
-            { name: "Irfan Sihotang", leaveUsed: { annual: 0, long: 0, sick: 0, maternity: 0, important: 0, outOfPocket: 0, collective: 0 } },
-            { name: "Rizky Ramadhan Piliang", leaveUsed: { annual: 0, long: 0, sick: 0, maternity: 0, important: 0, outOfPocket: 0, collective: 0 } },
-            { name: "Andrian Mendrofa", leaveUsed: { annual: 0, long: 0, sick: 0, maternity: 0, important: 0, outOfPocket: 0, collective: 0 } }
-        ];
+        // Fungsi untuk mengambil data pegawai dari Apps Script
+        async function fetchEmployees() {
+            const employeeGrid = document.getElementById('employeeGrid');
+            employeeGrid.innerHTML = '<p class="text-center text-gray-500 col-span-full">Memuat data pegawai...</p>';
+            
+            try {
+                const response = await fetch(`${GOOGLE_APPS_SCRIPT_URL}?action=getEmployees`);
+                if (!response.ok) throw new Error('Gagal memuat data pegawai.');
+                employees = await response.json();
+                renderEmployees(isAdmin);
+            } catch (error) {
+                console.error("Kesalahan saat mengambil data pegawai:", error);
+                employeeGrid.innerHTML = `<p class="text-center text-red-500 col-span-full">Gagal memuat data pegawai. Error: ${error.message}</p>`;
+            }
+        }
 
         // Render daftar pegawai
-        function renderEmployees(isAdmin) {
+        function renderEmployees() {
             const employeeGrid = document.getElementById('employeeGrid');
-            employeeGrid.innerHTML = ''; // Kosongkan grid sebelum merender
+            employeeGrid.innerHTML = '';
+            
+            if (employees.length === 0) {
+                employeeGrid.innerHTML = '<p class="text-center text-gray-500 col-span-full">Tidak ada data pegawai yang tersedia.</p>';
+                return;
+            }
+
             employees.forEach((employee, index) => {
                 const kuotaCuti = 12; // Kuota Cuti Tahunan konstan
-                const cutiTerpakai = employee.leaveUsed.annual;
+                const cutiTerpakai = employee.leaveUsed ? employee.leaveUsed.annual : 0;
                 const card = document.createElement('div');
                 card.className = 'card p-6 rounded-2xl shadow-lg border border-gray-200 flex flex-col justify-between';
                 card.innerHTML = `
@@ -333,17 +293,16 @@
             });
         }
 
-        // Fungsi baru untuk mengambil data cuti dari Google Apps Script
+        // Fungsi untuk mengambil data cuti dari Apps Script
         async function fetchOnLeaveEmployees() {
             const onLeaveContainer = document.getElementById('onLeaveEmployees');
-            onLeaveContainer.innerHTML = '<p class="text-center text-gray-500 col-span-full">Memuat data...</p>'; // Tampilkan status memuat
+            onLeaveContainer.innerHTML = '<p class="text-center text-gray-500 col-span-full">Memuat data...</p>';
 
             try {
-                // Lakukan fetch ke URL Google Apps Script
-                const response = await fetch(GOOGLE_APPS_SCRIPT_URL);
+                const response = await fetch(`${GOOGLE_APPS_SCRIPT_URL}?action=getOnLeaveToday`);
+                if (!response.ok) throw new Error('Gagal memuat data cuti hari ini.');
                 const onLeaveToday = await response.json();
                 
-                // Hapus status memuat dan render data yang diterima
                 onLeaveContainer.innerHTML = '';
                 if (onLeaveToday.length === 0) {
                     onLeaveContainer.innerHTML = '<p class="text-gray-500 text-center italic col-span-full">Tidak ada pegawai yang sedang cuti hari ini.</p>';
@@ -360,7 +319,7 @@
                 }
             } catch (error) {
                 console.error("Gagal mengambil data cuti:", error);
-                onLeaveContainer.innerHTML = '<p class="text-red-500 text-center italic col-span-full">Gagal memuat data. Periksa URL Apps Script Anda.</p>';
+                onLeaveContainer.innerHTML = `<p class="text-red-500 text-center italic col-span-full">Gagal memuat data. Error: ${error.message}</p>`;
             }
         }
         
@@ -380,7 +339,6 @@
         const resizeHandle = document.getElementById('resizeHandle');
         const modalEmployeeName = document.getElementById('modalEmployeeName');
         const saveLeaveBtn = document.getElementById('saveLeaveBtn');
-        let currentEmployeeIndex = -1;
 
         // Variabel untuk fungsionalitas drag
         let isDragging = false;
@@ -393,13 +351,13 @@
             const employee = employees[index];
             modalEmployeeName.textContent = employee.name;
             
-            document.getElementById('annualLeave').value = employee.leaveUsed.annual;
-            document.getElementById('longLeave').value = employee.leaveUsed.long;
-            document.getElementById('sickLeave').value = employee.leaveUsed.sick;
-            document.getElementById('maternityLeave').value = employee.leaveUsed.maternity;
-            document.getElementById('importantLeave').value = employee.leaveUsed.important;
-            document.getElementById('outOfPocketLeave').value = employee.leaveUsed.outOfPocket;
-            document.getElementById('collectiveLeave').value = employee.leaveUsed.collective;
+            document.getElementById('annualLeave').value = employee.leaveUsed?.annual || 0;
+            document.getElementById('longLeave').value = employee.leaveUsed?.long || 0;
+            document.getElementById('sickLeave').value = employee.leaveUsed?.sick || 0;
+            document.getElementById('maternityLeave').value = employee.leaveUsed?.maternity || 0;
+            document.getElementById('importantLeave').value = employee.leaveUsed?.important || 0;
+            document.getElementById('outOfPocketLeave').value = employee.leaveUsed?.outOfPocket || 0;
+            document.getElementById('collectiveLeave').value = employee.leaveUsed?.collective || 0;
             
             modal.classList.remove('hidden');
             // Menempatkan modal di tengah-tengah saat dibuka
@@ -480,39 +438,69 @@
             isResizing = false;
         });
 
-        saveLeaveBtn.addEventListener('click', () => {
-            if (currentEmployeeIndex !== -1) {
-                const employee = employees[currentEmployeeIndex];
-                
-                employee.leaveUsed.annual = parseInt(document.getElementById('annualLeave').value) || 0;
-                employee.leaveUsed.long = parseInt(document.getElementById('longLeave').value) || 0;
-                employee.leaveUsed.sick = parseInt(document.getElementById('sickLeave').value) || 0;
-                employee.leaveUsed.maternity = parseInt(document.getElementById('maternityLeave').value) || 0;
-                employee.leaveUsed.important = parseInt(document.getElementById('importantLeave').value) || 0;
-                employee.leaveUsed.outOfPocketLeave = parseInt(document.getElementById('outOfPocketLeave').value) || 0;
-                employee.leaveUsed.collective = parseInt(document.getElementById('collectiveLeave').value) || 0;
-                
-                renderEmployees(isAdmin); // Update tampilan
-                closeEditModal();
-                showMessage("Data cuti berhasil diperbarui!");
+        // Event listener untuk tombol Simpan Perubahan (diperbarui untuk menyimpan data ke Apps Script)
+        saveLeaveBtn.addEventListener('click', async () => {
+            if (currentEmployeeIndex === -1) return;
+
+            const employee = employees[currentEmployeeIndex];
+            const updatedData = {
+                id: employee.id, // Pastikan ada ID unik di data Anda
+                annualLeave: parseInt(document.getElementById('annualLeave').value) || 0,
+                longLeave: parseInt(document.getElementById('longLeave').value) || 0,
+                sickLeave: parseInt(document.getElementById('sickLeave').value) || 0,
+                maternityLeave: parseInt(document.getElementById('maternityLeave').value) || 0,
+                importantLeave: parseInt(document.getElementById('importantLeave').value) || 0,
+                outOfPocketLeave: parseInt(document.getElementById('outOfPocketLeave').value) || 0,
+                collectiveLeave: parseInt(document.getElementById('collectiveLeave').value) || 0
+            };
+
+            closeEditModal();
+            showMessage("Menyimpan perubahan...", true);
+
+            try {
+                const response = await fetch(`${GOOGLE_APPS_SCRIPT_URL}?action=updateLeave`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(updatedData)
+                });
+
+                const result = await response.json();
+                if (result.status === 'success') {
+                    // Perbarui data lokal dengan data baru dari server
+                    employees[currentEmployeeIndex].leaveUsed = {
+                        annual: updatedData.annualLeave,
+                        long: updatedData.longLeave,
+                        sick: updatedData.sickLeave,
+                        maternity: updatedData.maternityLeave,
+                        important: updatedData.importantLeave,
+                        outOfPocket: updatedData.outOfPocketLeave,
+                        collective: updatedData.collectiveLeave
+                    };
+                    renderEmployees();
+                    showMessage("Data cuti berhasil diperbarui!", true);
+                } else {
+                    throw new Error(result.message || "Gagal menyimpan data cuti.");
+                }
+            } catch (error) {
+                console.error("Kesalahan saat menyimpan data:", error);
+                showMessage(`Gagal menyimpan data: ${error.message}`, false);
             }
         });
         
         // Event listener untuk tombol toggle role
         const toggleRoleBtn = document.getElementById('toggleRoleBtn');
-        let isAdmin = false;
         toggleRoleBtn.addEventListener('click', () => {
             isAdmin = !isAdmin;
             toggleRoleBtn.textContent = isAdmin ? 'Admin' : 'User';
             document.getElementById('adminControls').classList.toggle('hidden', !isAdmin);
-            renderEmployees(isAdmin);
+            renderEmployees();
         });
 
         // Inisialisasi
         document.addEventListener('DOMContentLoaded', () => {
             updateDateTime();
             setInterval(updateDateTime, 1000); // Perbarui waktu setiap detik
-            renderEmployees(isAdmin); // Render daftar pegawai dengan role default (User)
+            fetchEmployees(); // Ambil data pegawai saat memuat halaman
             fetchOnLeaveEmployees(); // Panggil fungsi baru untuk mengambil data cuti secara dinamis
             document.getElementById('currentYear').textContent = new Date().getFullYear();
         });
