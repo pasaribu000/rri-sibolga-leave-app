@@ -176,6 +176,12 @@
         <!-- Employee List Section -->
         <section>
             <h2 class="text-2xl md:text-3xl font-bold text-gray-800 mb-4 text-center md:text-left">Daftar Pegawai</h2>
+            
+            <!-- Search Bar -->
+            <div class="mb-6">
+                <input type="text" id="employeeSearch" placeholder="Cari nama pegawai..." class="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#1b73ba] transition">
+            </div>
+
             <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4" id="employeeGrid">
                 <!-- Employee cards will be populated by JavaScript -->
             </div>
@@ -270,11 +276,17 @@
         let isAdmin = false;
 
         // Render daftar pegawai
-        function renderEmployees(isAdminView) {
+        function renderEmployees(employeeList) {
             const employeeGrid = document.getElementById('employeeGrid');
             employeeGrid.innerHTML = ''; // Kosongkan grid sebelum merender
             
-            employees.forEach((employee, index) => {
+            // Tampilkan pesan jika tidak ada pegawai yang cocok
+            if (employeeList.length === 0) {
+                employeeGrid.innerHTML = '<p class="text-center text-gray-500 col-span-full italic">Tidak ada pegawai yang ditemukan.</p>';
+                return;
+            }
+
+            employeeList.forEach((employee, index) => {
                 const card = document.createElement('div');
                 card.className = 'card p-6 rounded-2xl shadow-lg border border-gray-200 flex flex-col justify-between';
                 card.innerHTML = `
@@ -291,7 +303,7 @@
                             <p>Bersama: <span class="font-bold text-red-500">${employee.leaveUsed.collective}</span> hari</p>
                         </div>
                     </div>
-                    ${isAdminView ? `
+                    ${isAdmin ? `
                     <div class="mt-4 text-right">
                         <button onclick="openEditModal(${index})" class="bg-[#1b73ba] text-white px-4 py-2 rounded-full text-sm font-medium hover:bg-[#0a3d62] transition">
                             <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-pencil inline-block mr-1">
@@ -305,6 +317,15 @@
                 `;
                 employeeGrid.appendChild(card);
             });
+        }
+
+        // Fungsi baru untuk memfilter daftar pegawai berdasarkan pencarian
+        function filterEmployees() {
+            const searchTerm = document.getElementById('employeeSearch').value.toLowerCase();
+            const filteredEmployees = employees.filter(employee =>
+                employee.name.toLowerCase().includes(searchTerm)
+            );
+            renderEmployees(filteredEmployees);
         }
 
         // Fungsi baru untuk mengambil data cuti dari Google Apps Script
@@ -332,7 +353,7 @@
                     
                     if (data.status === 'success') {
                         employees = data.employees;
-                        renderEmployees(isAdmin);
+                        renderEmployees(employees); // Render semua pegawai saat pertama kali dimuat
                         return; // Berhasil, keluar dari loop
                     } else {
                         // Perbaikan: tambahkan pesan kesalahan yang lebih jelas jika skrip Apps Script mengembalikan error.
@@ -398,7 +419,7 @@
                     if (result.status === 'success') {
                         // Perbarui data lokal setelah berhasil disimpan
                         employee.leaveUsed = updatedLeaveData;
-                        renderEmployees(isAdmin);
+                        renderEmployees(employees); // Render ulang daftar lengkap
                         showMessageBox('Perubahan berhasil disimpan!', 'success');
                         return;
                     } else {
@@ -483,6 +504,7 @@
             if (!isAdmin) return; // Hanya izinkan admin membuka modal
             
             currentEmployeeIndex = index;
+            // Gunakan `employees` asli karena indeks modal tetap sama
             const employee = employees[index];
             modalEmployeeName.textContent = employee.name;
             
@@ -555,7 +577,7 @@
                 isAdmin = false;
                 toggleRoleBtn.textContent = 'User';
                 adminControls.classList.add('hidden');
-                renderEmployees(isAdmin);
+                renderEmployees(employees); // Render ulang daftar lengkap saat keluar mode admin
                 showMessageBox('Berhasil keluar dari mode Admin', 'success');
             } else {
                 // Open password modal to switch to Admin mode
@@ -574,7 +596,7 @@
                 isAdmin = true;
                 toggleRoleBtn.textContent = 'Admin';
                 adminControls.classList.remove('hidden');
-                renderEmployees(isAdmin);
+                renderEmployees(employees); // Render ulang daftar lengkap saat masuk mode admin
                 closePasswordModal();
                 showMessageBox('Berhasil masuk ke mode Admin', 'success');
             } else {
@@ -613,6 +635,9 @@
             fetchOnLeaveEmployees();
             // Set current year in footer
             document.getElementById('currentYear').textContent = new Date().getFullYear();
+            
+            // Tambahkan event listener untuk kolom pencarian
+            document.getElementById('employeeSearch').addEventListener('input', filterEmployees);
         }
     </script>
 </body>
