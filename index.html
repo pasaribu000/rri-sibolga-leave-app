@@ -179,7 +179,7 @@
         </div>
 
         <!-- Employee Cards Section -->
-        <div id="employeeSection" class="hidden">
+        <div id="employeeSection">
             <div class="flex justify-between items-center mb-8">
                 <h3 class="text-3xl font-bold text-gray-800">Data Pegawai</h3>
                 <div id="adminControls" class="hidden space-x-4">
@@ -390,6 +390,12 @@
             setupEventListeners();
             initializeTodayDate();
             loadTodayLeave();
+            
+            // Show employee section immediately for all users
+            employeeSection.classList.remove('hidden');
+            
+            // Load employee data for guests immediately
+            loadEmployeesForGuests();
             
             // Auth state observer
             auth.onAuthStateChanged(user => {
@@ -1191,20 +1197,30 @@
             today.setHours(0, 0, 0, 0);
             
             return data.filter(row => {
-                // Check exact column names from your spreadsheet
-                const startDate = row['Tanggal Mulai Cuti'] || row['Tanggal Mulai'] || row['Start Date'] || row['Mulai'] || '';
-                const endDate = row['Tanggal Selesai Cuti'] || row['Tanggal Selesai'] || row['End Date'] || row['Selesai'] || '';
+                // Check exact column names from your spreadsheet (with spaces)
+                const startDate = row['  Tanggal Mulai Cuti  '] || row['Tanggal Mulai Cuti'] || row['Tanggal Mulai'] || row['Start Date'] || row['Mulai'] || '';
+                const endDate = row['  Tanggal Selesai Cuti  '] || row['Tanggal Selesai Cuti'] || row['Tanggal Selesai'] || row['End Date'] || row['Selesai'] || '';
+                
+                console.log('Checking employee:', row['Nama Pegawai '] || row['  Nama Pegawai  ']);
+                console.log('Start date:', startDate);
+                console.log('End date:', endDate);
                 
                 if (startDate && endDate) {
                     const start = parseDate(startDate);
                     const end = parseDate(endDate);
+                    
+                    console.log('Parsed start:', start);
+                    console.log('Parsed end:', end);
+                    console.log('Today:', today);
                     
                     if (start && end) {
                         // Set time to start of day for accurate comparison
                         start.setHours(0, 0, 0, 0);
                         end.setHours(23, 59, 59, 999);
                         
-                        return today >= start && today <= end;
+                        const isInRange = today >= start && today <= end;
+                        console.log('Is in range:', isInRange);
+                        return isInRange;
                     }
                 }
                 
@@ -1214,7 +1230,9 @@
                     const date = parseDate(singleDate);
                     if (date) {
                         date.setHours(0, 0, 0, 0);
-                        return date.getTime() === today.getTime();
+                        const isToday = date.getTime() === today.getTime();
+                        console.log('Single date match:', isToday);
+                        return isToday;
                     }
                 }
                 
@@ -1228,7 +1246,7 @@
             // Clean the date string
             dateStr = dateStr.trim();
             
-            // Indonesian format: DD/MM/YYYY
+            // Indonesian format: DD/MM/YYYY (most common in your data)
             const ddmmyyyy = dateStr.match(/(\d{1,2})\/(\d{1,2})\/(\d{4})/);
             if (ddmmyyyy) {
                 const day = parseInt(ddmmyyyy[1]);
@@ -1241,31 +1259,29 @@
                 }
             }
             
-            // Try other formats
-            const formats = [
-                /(\d{4})-(\d{1,2})-(\d{1,2})/, // YYYY-MM-DD
-                /(\d{1,2})-(\d{1,2})-(\d{4})/, // DD-MM-YYYY
-            ];
+            // Try DD-MM-YYYY format
+            const ddmmyyyy2 = dateStr.match(/(\d{1,2})-(\d{1,2})-(\d{4})/);
+            if (ddmmyyyy2) {
+                const day = parseInt(ddmmyyyy2[1]);
+                const month = parseInt(ddmmyyyy2[2]) - 1;
+                const year = parseInt(ddmmyyyy2[3]);
+                
+                const date = new Date(year, month, day);
+                if (!isNaN(date.getTime())) {
+                    return date;
+                }
+            }
             
-            for (const format of formats) {
-                const match = dateStr.match(format);
-                if (match) {
-                    let day, month, year;
-                    
-                    if (format === formats[0]) { // YYYY-MM-DD
-                        year = parseInt(match[1]);
-                        month = parseInt(match[2]) - 1;
-                        day = parseInt(match[3]);
-                    } else { // DD-MM-YYYY
-                        day = parseInt(match[1]);
-                        month = parseInt(match[2]) - 1;
-                        year = parseInt(match[3]);
-                    }
-                    
-                    const date = new Date(year, month, day);
-                    if (!isNaN(date.getTime())) {
-                        return date;
-                    }
+            // Try YYYY-MM-DD format
+            const yyyymmdd = dateStr.match(/(\d{4})-(\d{1,2})-(\d{1,2})/);
+            if (yyyymmdd) {
+                const year = parseInt(yyyymmdd[1]);
+                const month = parseInt(yyyymmdd[2]) - 1;
+                const day = parseInt(yyyymmdd[3]);
+                
+                const date = new Date(year, month, day);
+                if (!isNaN(date.getTime())) {
+                    return date;
                 }
             }
             
@@ -1288,12 +1304,12 @@
             }
 
             const leaveHTML = leaveData.map(employee => {
-                // Use exact column names from your spreadsheet
-                const name = employee['Nama Pegawai'] || employee['Nama'] || employee['Name'] || 'Nama tidak tersedia';
-                const leaveType = employee['Jenis Cuti'] || employee['Leave Type'] || 'Tidak disebutkan';
-                const startDate = employee['Tanggal Mulai Cuti'] || employee['Tanggal Mulai'] || '';
-                const endDate = employee['Tanggal Selesai Cuti'] || employee['Tanggal Selesai'] || '';
-                const email = employee['Alamat Email Pegawai'] || employee['Email'] || '';
+                // Use exact column names from your spreadsheet (with spaces)
+                const name = employee['Nama Pegawai '] || employee['  Nama Pegawai  '] || employee['Nama'] || employee['Name'] || 'Nama tidak tersedia';
+                const leaveType = employee['  Jenis Cuti  '] || employee['Jenis Cuti'] || employee['Leave Type'] || 'Tidak disebutkan';
+                const startDate = employee['  Tanggal Mulai Cuti  '] || employee['Tanggal Mulai Cuti'] || employee['Tanggal Mulai'] || '';
+                const endDate = employee['  Tanggal Selesai Cuti  '] || employee['Tanggal Selesai Cuti'] || employee['Tanggal Selesai'] || '';
+                const email = employee['  Alamat Email Pegawai  '] || employee['Alamat Email Pegawai'] || employee['Email'] || '';
                 
                 // Format leave type for display
                 const formattedLeaveType = leaveType.charAt(0).toUpperCase() + leaveType.slice(1);
@@ -1338,5 +1354,5 @@
         // Call this once to initialize all employee data
         // initializeAllEmployees();
     </script>
-<script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'9700366ac4f83da1',t:'MTc1NTMzOTc2Ny4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
+<script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'9700435b36d73e60',t:'MTc1NTM0MDI5Ny4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
 </html>
