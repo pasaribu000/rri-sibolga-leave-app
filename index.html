@@ -552,8 +552,24 @@
                         ? 'px-3 py-1 rounded-full text-sm font-medium bg-red-100 text-red-800'
                         : 'px-3 py-1 rounded-full text-sm font-medium bg-blue-100 text-blue-800';
                     
+                    // Store user role globally for easy access
+                    window.currentUserRole = userData.role;
+                    
                     showUserView(userData.role);
                     await loadEmployees();
+                } else {
+                    // If user document doesn't exist but user is logged in, create it
+                    if (currentUser.email === 'priadipasaribu@gmail.com') {
+                        await db.collection('users').doc(currentUser.uid).set({
+                            name: 'Citra Priadi Pasaribu, S.IP',
+                            email: currentUser.email,
+                            role: 'admin',
+                            createdAt: firebase.firestore.FieldValue.serverTimestamp()
+                        });
+                        
+                        // Reload user data
+                        await loadUserData();
+                    }
                 }
             } catch (error) {
                 console.error('Error loading user data:', error);
@@ -602,10 +618,16 @@
             userInfo.classList.remove('hidden');
             employeeSection.classList.remove('hidden');
             
+            console.log('User role:', role); // Debug log
+            console.log('Current user email:', currentUser ? currentUser.email : 'No user'); // Debug log
+            
             if (role === 'admin') {
                 adminControls.classList.remove('hidden');
+                console.log('Admin controls shown'); // Debug log
+                showNotification('Mode admin aktif! Anda dapat mengedit data pegawai.', 'success');
             } else {
                 adminControls.classList.add('hidden');
+                console.log('Admin controls hidden'); // Debug log
             }
         }
 
@@ -807,109 +829,80 @@
             // Set up modal buttons based on user role and edit mode
             const modalButtons = document.getElementById('modalButtons');
             
-            if (currentUser) {
-                // User is logged in - check their role
-                const userDoc = db.collection('users').doc(currentUser.uid);
-                
-                userDoc.get().then(doc => {
-                    const isAdmin = doc.exists && doc.data().role === 'admin';
-                    
-                    if (isAdmin) {
-                        // Admin user - show edit/save buttons
-                        if (isEditMode) {
-                            modalButtons.innerHTML = `
-                                <button type="button" id="saveEmployeeBtn" class="flex-1 bg-green-600 hover:bg-green-700 text-white py-3 rounded-lg font-medium transition-colors">
-                                    <i class="fas fa-save mr-2"></i>Simpan Perubahan
-                                </button>
-                                <button type="button" id="closeModalBtn" class="flex-1 bg-gray-300 hover:bg-gray-400 text-gray-700 py-3 rounded-lg font-medium transition-colors">
-                                    Batal
-                                </button>
-                            `;
-                            
-                            // Enable editing
-                            const inputs = employeeModal.querySelectorAll('input[type="number"]');
-                            inputs.forEach(input => {
-                                input.removeAttribute('readonly');
-                                input.style.backgroundColor = '#f9fafb';
-                                input.style.cursor = 'text';
-                            });
-                            
-                            // Add save functionality
-                            document.getElementById('saveEmployeeBtn').addEventListener('click', () => saveEmployee(employee.id));
-                        } else {
-                            modalButtons.innerHTML = `
-                                <button type="button" id="enableEditBtn" class="flex-1 bg-yellow-600 hover:bg-yellow-700 text-white py-3 rounded-lg font-medium transition-colors">
-                                    <i class="fas fa-edit mr-2"></i>Edit Data Ini
-                                </button>
-                                <button type="button" id="closeModalBtn" class="flex-1 bg-gray-300 hover:bg-gray-400 text-gray-700 py-3 rounded-lg font-medium transition-colors">
-                                    Tutup
-                                </button>
-                            `;
-                            
-                            // Disable editing
-                            const inputs = employeeModal.querySelectorAll('input[type="number"]');
-                            inputs.forEach(input => {
-                                input.setAttribute('readonly', true);
-                                input.style.backgroundColor = '#f3f4f6';
-                                input.style.cursor = 'not-allowed';
-                            });
-                            
-                            // Add edit button functionality
-                            document.getElementById('enableEditBtn').addEventListener('click', () => {
-                                isEditMode = true;
-                                showEmployeeModal(employee); // Refresh modal with edit mode
-                            });
-                        }
-                    } else {
-                        // Regular user - read only
-                        modalButtons.innerHTML = `
-                            <button type="button" id="closeModalBtn" class="flex-1 bg-gray-300 hover:bg-gray-400 text-gray-700 py-3 rounded-lg font-medium transition-colors">
-                                Tutup
-                            </button>
-                        `;
-                        
-                        // Disable editing
-                        const inputs = employeeModal.querySelectorAll('input[type="number"]');
-                        inputs.forEach(input => {
-                            input.setAttribute('readonly', true);
-                            input.style.backgroundColor = '#f3f4f6';
-                            input.style.cursor = 'not-allowed';
-                        });
-                    }
-                    
-                    // Re-attach close event
-                    document.getElementById('closeModalBtn').addEventListener('click', () => hideModal('employeeModal'));
-                }).catch(error => {
-                    console.error('Error getting user role:', error);
-                    // Fallback to read-only mode
+            // Check if user is admin (simplified check)
+            const isAdmin = currentUser && (
+                currentUser.email === 'priadipasaribu@gmail.com' || 
+                window.currentUserRole === 'admin'
+            );
+            
+            if (isAdmin) {
+                // Admin user - show edit/save buttons
+                if (isEditMode) {
                     modalButtons.innerHTML = `
+                        <button type="button" id="saveEmployeeBtn" class="flex-1 bg-green-600 hover:bg-green-700 text-white py-3 rounded-lg font-medium transition-colors">
+                            <i class="fas fa-save mr-2"></i>Simpan Perubahan
+                        </button>
+                        <button type="button" id="closeModalBtn" class="flex-1 bg-gray-300 hover:bg-gray-400 text-gray-700 py-3 rounded-lg font-medium transition-colors">
+                            Batal
+                        </button>
+                    `;
+                    
+                    // Enable editing
+                    const inputs = employeeModal.querySelectorAll('input[type="number"]');
+                    inputs.forEach(input => {
+                        input.removeAttribute('readonly');
+                        input.style.backgroundColor = '#ffffff';
+                        input.style.cursor = 'text';
+                        input.style.border = '2px solid #3b82f6';
+                    });
+                    
+                    // Add save functionality
+                    document.getElementById('saveEmployeeBtn').addEventListener('click', () => saveEmployee(employee.id));
+                } else {
+                    modalButtons.innerHTML = `
+                        <button type="button" id="enableEditBtn" class="flex-1 bg-yellow-600 hover:bg-yellow-700 text-white py-3 rounded-lg font-medium transition-colors">
+                            <i class="fas fa-edit mr-2"></i>Edit Data Ini
+                        </button>
                         <button type="button" id="closeModalBtn" class="flex-1 bg-gray-300 hover:bg-gray-400 text-gray-700 py-3 rounded-lg font-medium transition-colors">
                             Tutup
                         </button>
                     `;
+                    
+                    // Disable editing
                     const inputs = employeeModal.querySelectorAll('input[type="number"]');
-                    inputs.forEach(input => input.setAttribute('readonly', true));
-                    document.getElementById('closeModalBtn').addEventListener('click', () => hideModal('employeeModal'));
-                });
+                    inputs.forEach(input => {
+                        input.setAttribute('readonly', true);
+                        input.style.backgroundColor = '#f3f4f6';
+                        input.style.cursor = 'not-allowed';
+                        input.style.border = '1px solid #d1d5db';
+                    });
+                    
+                    // Add edit button functionality
+                    document.getElementById('enableEditBtn').addEventListener('click', () => {
+                        isEditMode = true;
+                        showEmployeeModal(employee); // Refresh modal with edit mode
+                    });
+                }
             } else {
-                // Guest user - read only
+                // Non-admin user - read only
                 modalButtons.innerHTML = `
                     <button type="button" id="closeModalBtn" class="flex-1 bg-gray-300 hover:bg-gray-400 text-gray-700 py-3 rounded-lg font-medium transition-colors">
                         Tutup
                     </button>
                 `;
                 
-                // Disable editing for guests
+                // Disable editing for non-admin
                 const inputs = employeeModal.querySelectorAll('input[type="number"]');
                 inputs.forEach(input => {
                     input.setAttribute('readonly', true);
                     input.style.backgroundColor = '#f3f4f6';
                     input.style.cursor = 'not-allowed';
+                    input.style.border = '1px solid #d1d5db';
                 });
-                
-                // Re-attach close event
-                document.getElementById('closeModalBtn').addEventListener('click', () => hideModal('employeeModal'));
             }
+            
+            // Re-attach close event
+            document.getElementById('closeModalBtn').addEventListener('click', () => hideModal('employeeModal'));
 
             showModal('employeeModal');
         }
@@ -935,49 +928,31 @@
             const existingNote = currentEmployee.notes && currentEmployee.notes[noteType] ? currentEmployee.notes[noteType] : '';
             document.getElementById('notesTextarea').value = existingNote;
             
-            // Setup buttons based on user role
-            const notesButtons = document.getElementById('notesButtons');
+            // Check if user is admin (simplified check)
+            const isAdmin = currentUser && (
+                currentUser.email === 'priadipasaribu@gmail.com' || 
+                window.currentUserRole === 'admin'
+            );
             
-            if (currentUser) {
-                const userDoc = db.collection('users').doc(currentUser.uid);
-                userDoc.get().then(doc => {
-                    const isAdmin = doc.exists && doc.data().role === 'admin';
-                    
-                    if (isAdmin) {
-                        // Admin can edit
-                        const textarea = document.getElementById('notesTextarea');
-                        textarea.removeAttribute('readonly');
-                        textarea.style.backgroundColor = '#ffffff';
-                        textarea.style.cursor = 'text';
-                        textarea.placeholder = 'Masukkan catatan untuk jenis cuti ini...';
-                        
-                        document.getElementById('saveNotesBtn').style.display = 'block';
-                        document.getElementById('saveNotesBtn').innerHTML = '<i class="fas fa-save mr-2"></i>Simpan Catatan';
-                    } else {
-                        // User can only view
-                        const textarea = document.getElementById('notesTextarea');
-                        textarea.setAttribute('readonly', true);
-                        textarea.style.backgroundColor = '#f3f4f6';
-                        textarea.style.cursor = 'not-allowed';
-                        textarea.placeholder = 'Hanya admin yang dapat mengedit catatan';
-                        
-                        document.getElementById('saveNotesBtn').style.display = 'none';
-                    }
-                }).catch(error => {
-                    console.error('Error checking user role for notes:', error);
-                    // Fallback to read-only
-                    const textarea = document.getElementById('notesTextarea');
-                    textarea.setAttribute('readonly', true);
-                    textarea.style.backgroundColor = '#f3f4f6';
-                    document.getElementById('saveNotesBtn').style.display = 'none';
-                });
+            const textarea = document.getElementById('notesTextarea');
+            
+            if (isAdmin) {
+                // Admin can edit
+                textarea.removeAttribute('readonly');
+                textarea.style.backgroundColor = '#ffffff';
+                textarea.style.cursor = 'text';
+                textarea.style.border = '2px solid #3b82f6';
+                textarea.placeholder = 'Masukkan catatan untuk jenis cuti ini...';
+                
+                document.getElementById('saveNotesBtn').style.display = 'block';
+                document.getElementById('saveNotesBtn').innerHTML = '<i class="fas fa-save mr-2"></i>Simpan Catatan';
             } else {
-                // Guest can only view
-                const textarea = document.getElementById('notesTextarea');
+                // Non-admin can only view
                 textarea.setAttribute('readonly', true);
                 textarea.style.backgroundColor = '#f3f4f6';
                 textarea.style.cursor = 'not-allowed';
-                textarea.placeholder = 'Login sebagai admin untuk mengedit catatan';
+                textarea.style.border = '1px solid #d1d5db';
+                textarea.placeholder = currentUser ? 'Hanya admin yang dapat mengedit catatan' : 'Login sebagai admin untuk mengedit catatan';
                 
                 document.getElementById('saveNotesBtn').style.display = 'none';
             }
@@ -1354,5 +1329,5 @@
         // Call this once to initialize all employee data
         // initializeAllEmployees();
     </script>
-<script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'9700435b36d73e60',t:'MTc1NTM0MDI5Ny4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
+<script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'97005271234dc50c',t:'MTc1NTM0MDkxNS4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
 </html>
