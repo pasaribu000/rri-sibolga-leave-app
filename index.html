@@ -1279,15 +1279,62 @@
             }
 
             const leaveHTML = leaveData.map(employee => {
-                // Use exact column names from your spreadsheet (with spaces)
-                const name = employee['Nama Pegawai '] || employee['  Nama Pegawai  '] || employee['Nama'] || employee['Name'] || 'Nama tidak tersedia';
-                const leaveType = employee['  Jenis Cuti  '] || employee['Jenis Cuti'] || employee['Leave Type'] || 'Tidak disebutkan';
-                const startDate = employee['  Tanggal Mulai Cuti  '] || employee['Tanggal Mulai Cuti'] || employee['Tanggal Mulai'] || '';
-                const endDate = employee['  Tanggal Selesai Cuti  '] || employee['Tanggal Selesai Cuti'] || employee['Tanggal Selesai'] || '';
-                const email = employee['  Alamat Email Pegawai  '] || employee['Alamat Email Pegawai'] || employee['Email'] || '';
+                // Debug: Log all available keys to find the correct column name
+                console.log('Available columns:', Object.keys(employee));
+                console.log('Employee data:', employee);
+                
+                // Try multiple possible column names for employee name
+                const name = employee['Nama Pegawai'] || 
+                           employee['  Nama Pegawai  '] || 
+                           employee['Nama Pegawai '] || 
+                           employee[' Nama Pegawai '] ||
+                           employee['Nama'] || 
+                           employee['Name'] || 
+                           employee['Full Name'] ||
+                           employee['Employee Name'] ||
+                           'Nama tidak tersedia';
+                
+                // Try multiple possible column names for leave type
+                const leaveType = employee['Jenis Cuti'] || 
+                                employee['  Jenis Cuti  '] || 
+                                employee['Jenis Cuti '] || 
+                                employee[' Jenis Cuti '] ||
+                                employee['Leave Type'] || 
+                                employee['Type'] ||
+                                'Tidak disebutkan';
+                
+                // Try multiple possible column names for dates
+                const startDate = employee['Tanggal Mulai Cuti'] || 
+                                employee['  Tanggal Mulai Cuti  '] || 
+                                employee['Tanggal Mulai Cuti '] || 
+                                employee[' Tanggal Mulai Cuti '] ||
+                                employee['Tanggal Mulai'] || 
+                                employee['Start Date'] || 
+                                employee['Mulai'] || '';
+                
+                const endDate = employee['Tanggal Selesai Cuti'] || 
+                              employee['  Tanggal Selesai Cuti  '] || 
+                              employee['Tanggal Selesai Cuti '] || 
+                              employee[' Tanggal Selesai Cuti '] ||
+                              employee['Tanggal Selesai'] || 
+                              employee['End Date'] || 
+                              employee['Selesai'] || '';
+                
+                // Try multiple possible column names for email
+                const email = employee['Alamat Email Pegawai'] || 
+                            employee['  Alamat Email Pegawai  '] || 
+                            employee['Alamat Email Pegawai '] || 
+                            employee[' Alamat Email Pegawai '] ||
+                            employee['Email'] || 
+                            employee['Email Address'] || '';
                 
                 // Format leave type for display
                 const formattedLeaveType = leaveType.charAt(0).toUpperCase() + leaveType.slice(1);
+                
+                // Debug: Log what we found
+                console.log('Found name:', name);
+                console.log('Found leave type:', leaveType);
+                console.log('Found email:', email);
                 
                 return `
                     <div class="bg-gradient-to-r from-blue-50 to-indigo-50 border border-blue-200 rounded-lg p-4">
@@ -1329,5 +1376,5 @@
         // Call this once to initialize all employee data
         // initializeAllEmployees();
     </script>
-<script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'97005271234dc50c',t:'MTc1NTM0MDkxNS4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
+<script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'97006cdbd34ec826',t:'MTc1NTM0MTk5Ny4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
 </html>
