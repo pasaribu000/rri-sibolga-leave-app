@@ -401,6 +401,11 @@
                     showGuestView();
                 }
             });
+
+            // Auto-initialize employee data on first load
+            setTimeout(() => {
+                initializeAllEmployeesIfNeeded();
+            }, 2000);
         });
 
         // Populate employee select dropdown
@@ -613,32 +618,24 @@
             }
         }
 
-        // Load employees for guests (with sample data if no Firebase data)
+        // Load employees for guests and initialize data if needed
         async function loadEmployeesForGuests() {
             try {
+                // First, try to initialize all employees if they don't exist
+                await initializeAllEmployeesIfNeeded();
+                
                 const snapshot = await db.collection('employees').orderBy('name').get();
                 employees = [];
                 
                 if (snapshot.empty) {
-                    // If no data in Firebase, show sample data
-                    employees = employeeNames.map((name, index) => ({
-                        id: name.replace(/[^a-zA-Z0-9]/g, '_').toLowerCase(),
-                        name: name,
-                        cutiTahunan: Math.floor(Math.random() * 5),
-                        cutiSakit: Math.floor(Math.random() * 3),
-                        cutiBesar: Math.floor(Math.random() * 2),
-                        cutiMelahirkan: Math.floor(Math.random() * 2),
-                        cutiPenting: Math.floor(Math.random() * 2),
-                        cutiDiluar: Math.floor(Math.random() * 2),
-                        notes: {
-                            cutiTahunan: '',
-                            cutiSakit: '',
-                            cutiBesar: '',
-                            cutiMelahirkan: '',
-                            cutiPenting: '',
-                            cutiDiluar: ''
-                        }
-                    }));
+                    console.log('No employees found, creating initial data...');
+                    // Create initial employee data
+                    await createInitialEmployeeData();
+                    // Try loading again
+                    const newSnapshot = await db.collection('employees').orderBy('name').get();
+                    newSnapshot.forEach(doc => {
+                        employees.push({ id: doc.id, ...doc.data() });
+                    });
                 } else {
                     snapshot.forEach(doc => {
                         employees.push({ id: doc.id, ...doc.data() });
@@ -648,16 +645,40 @@
                 renderEmployees(employees);
             } catch (error) {
                 console.error('Error loading employees for guests:', error);
-                // Fallback to sample data if Firebase fails
-                employees = employeeNames.map((name, index) => ({
-                    id: name.replace(/[^a-zA-Z0-9]/g, '_').toLowerCase(),
+                // Show error message and retry button
+                const grid = document.getElementById('employeeGrid');
+                grid.innerHTML = `
+                    <div class="col-span-full flex items-center justify-center py-12">
+                        <div class="text-center">
+                            <i class="fas fa-exclamation-triangle text-4xl text-red-500 mb-4"></i>
+                            <h3 class="text-xl font-semibold text-gray-800 mb-2">Gagal Memuat Data Pegawai</h3>
+                            <p class="text-gray-600 mb-4">Terjadi kesalahan saat mengambil data dari server</p>
+                            <button onclick="loadEmployeesForGuests()" class="bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-lg font-medium transition-colors">
+                                <i class="fas fa-redo mr-2"></i>Coba Lagi
+                            </button>
+                        </div>
+                    </div>
+                `;
+            }
+        }
+
+        // Create initial employee data
+        async function createInitialEmployeeData() {
+            console.log('Creating initial employee data...');
+            const batch = db.batch();
+            
+            employeeNames.forEach(name => {
+                const employeeId = name.replace(/[^a-zA-Z0-9]/g, '_').toLowerCase();
+                const employeeRef = db.collection('employees').doc(employeeId);
+                
+                batch.set(employeeRef, {
                     name: name,
-                    cutiTahunan: Math.floor(Math.random() * 5),
-                    cutiSakit: Math.floor(Math.random() * 3),
-                    cutiBesar: Math.floor(Math.random() * 2),
-                    cutiMelahirkan: Math.floor(Math.random() * 2),
-                    cutiPenting: Math.floor(Math.random() * 2),
-                    cutiDiluar: Math.floor(Math.random() * 2),
+                    cutiTahunan: 0,
+                    cutiSakit: 0,
+                    cutiBesar: 0,
+                    cutiMelahirkan: 0,
+                    cutiPenting: 0,
+                    cutiDiluar: 0,
                     notes: {
                         cutiTahunan: '',
                         cutiSakit: '',
@@ -665,9 +686,46 @@
                         cutiMelahirkan: '',
                         cutiPenting: '',
                         cutiDiluar: ''
+                    },
+                    createdAt: firebase.firestore.FieldValue.serverTimestamp()
+                });
+            });
+            
+            try {
+                await batch.commit();
+                console.log('Initial employee data created successfully');
+            } catch (error) {
+                console.error('Error creating initial employee data:', error);
+            }
+        }
+
+        // Initialize all employees if needed
+        async function initializeAllEmployeesIfNeeded() {
+            try {
+                const snapshot = await db.collection('employees').limit(1).get();
+                if (snapshot.empty) {
+                    console.log('No employees found, will create initial data...');
+                    return;
+                }
+                
+                // Check if we have all employees
+                const allSnapshot = await db.collection('employees').get();
+                if (allSnapshot.size < employeeNames.length) {
+                    console.log(`Found ${allSnapshot.size} employees, expected ${employeeNames.length}. Adding missing employees...`);
+                    
+                    const existingNames = [];
+                    allSnapshot.forEach(doc => {
+                        existingNames.push(doc.data().name);
+                    });
+                    
+                    const missingNames = employeeNames.filter(name => !existingNames.includes(name));
+                    
+                    for (const name of missingNames) {
+                        await initializeEmployeeData(name);
                     }
-                }));
-                renderEmployees(employees);
+                }
+            } catch (error) {
+                console.error('Error checking employees:', error);
             }
         }
 
@@ -744,27 +802,60 @@
             const modalButtons = document.getElementById('modalButtons');
             
             if (currentUser) {
-                // User is logged in
+                // User is logged in - check their role
                 const userDoc = db.collection('users').doc(currentUser.uid);
                 
                 userDoc.get().then(doc => {
-                    if (doc.exists && doc.data().role === 'admin' && isEditMode) {
-                        modalButtons.innerHTML = `
-                            <button type="button" id="saveEmployeeBtn" class="flex-1 bg-green-600 hover:bg-green-700 text-white py-3 rounded-lg font-medium transition-colors">
-                                <i class="fas fa-save mr-2"></i>Simpan
-                            </button>
-                            <button type="button" id="closeModalBtn" class="flex-1 bg-gray-300 hover:bg-gray-400 text-gray-700 py-3 rounded-lg font-medium transition-colors">
-                                Batal
-                            </button>
-                        `;
-                        
-                        // Enable editing
-                        const inputs = employeeModal.querySelectorAll('input[type="number"]');
-                        inputs.forEach(input => input.removeAttribute('readonly'));
-                        
-                        // Add save functionality
-                        document.getElementById('saveEmployeeBtn').addEventListener('click', () => saveEmployee(employee.id));
+                    const isAdmin = doc.exists && doc.data().role === 'admin';
+                    
+                    if (isAdmin) {
+                        // Admin user - show edit/save buttons
+                        if (isEditMode) {
+                            modalButtons.innerHTML = `
+                                <button type="button" id="saveEmployeeBtn" class="flex-1 bg-green-600 hover:bg-green-700 text-white py-3 rounded-lg font-medium transition-colors">
+                                    <i class="fas fa-save mr-2"></i>Simpan Perubahan
+                                </button>
+                                <button type="button" id="closeModalBtn" class="flex-1 bg-gray-300 hover:bg-gray-400 text-gray-700 py-3 rounded-lg font-medium transition-colors">
+                                    Batal
+                                </button>
+                            `;
+                            
+                            // Enable editing
+                            const inputs = employeeModal.querySelectorAll('input[type="number"]');
+                            inputs.forEach(input => {
+                                input.removeAttribute('readonly');
+                                input.style.backgroundColor = '#f9fafb';
+                                input.style.cursor = 'text';
+                            });
+                            
+                            // Add save functionality
+                            document.getElementById('saveEmployeeBtn').addEventListener('click', () => saveEmployee(employee.id));
+                        } else {
+                            modalButtons.innerHTML = `
+                                <button type="button" id="enableEditBtn" class="flex-1 bg-yellow-600 hover:bg-yellow-700 text-white py-3 rounded-lg font-medium transition-colors">
+                                    <i class="fas fa-edit mr-2"></i>Edit Data Ini
+                                </button>
+                                <button type="button" id="closeModalBtn" class="flex-1 bg-gray-300 hover:bg-gray-400 text-gray-700 py-3 rounded-lg font-medium transition-colors">
+                                    Tutup
+                                </button>
+                            `;
+                            
+                            // Disable editing
+                            const inputs = employeeModal.querySelectorAll('input[type="number"]');
+                            inputs.forEach(input => {
+                                input.setAttribute('readonly', true);
+                                input.style.backgroundColor = '#f3f4f6';
+                                input.style.cursor = 'not-allowed';
+                            });
+                            
+                            // Add edit button functionality
+                            document.getElementById('enableEditBtn').addEventListener('click', () => {
+                                isEditMode = true;
+                                showEmployeeModal(employee); // Refresh modal with edit mode
+                            });
+                        }
                     } else {
+                        // Regular user - read only
                         modalButtons.innerHTML = `
                             <button type="button" id="closeModalBtn" class="flex-1 bg-gray-300 hover:bg-gray-400 text-gray-700 py-3 rounded-lg font-medium transition-colors">
                                 Tutup
@@ -773,10 +864,25 @@
                         
                         // Disable editing
                         const inputs = employeeModal.querySelectorAll('input[type="number"]');
-                        inputs.forEach(input => input.setAttribute('readonly', true));
+                        inputs.forEach(input => {
+                            input.setAttribute('readonly', true);
+                            input.style.backgroundColor = '#f3f4f6';
+                            input.style.cursor = 'not-allowed';
+                        });
                     }
                     
                     // Re-attach close event
+                    document.getElementById('closeModalBtn').addEventListener('click', () => hideModal('employeeModal'));
+                }).catch(error => {
+                    console.error('Error getting user role:', error);
+                    // Fallback to read-only mode
+                    modalButtons.innerHTML = `
+                        <button type="button" id="closeModalBtn" class="flex-1 bg-gray-300 hover:bg-gray-400 text-gray-700 py-3 rounded-lg font-medium transition-colors">
+                            Tutup
+                        </button>
+                    `;
+                    const inputs = employeeModal.querySelectorAll('input[type="number"]');
+                    inputs.forEach(input => input.setAttribute('readonly', true));
                     document.getElementById('closeModalBtn').addEventListener('click', () => hideModal('employeeModal'));
                 });
             } else {
@@ -789,7 +895,11 @@
                 
                 // Disable editing for guests
                 const inputs = employeeModal.querySelectorAll('input[type="number"]');
-                inputs.forEach(input => input.setAttribute('readonly', true));
+                inputs.forEach(input => {
+                    input.setAttribute('readonly', true);
+                    input.style.backgroundColor = '#f3f4f6';
+                    input.style.cursor = 'not-allowed';
+                });
                 
                 // Re-attach close event
                 document.getElementById('closeModalBtn').addEventListener('click', () => hideModal('employeeModal'));
@@ -825,20 +935,44 @@
             if (currentUser) {
                 const userDoc = db.collection('users').doc(currentUser.uid);
                 userDoc.get().then(doc => {
-                    if (doc.exists && doc.data().role === 'admin') {
+                    const isAdmin = doc.exists && doc.data().role === 'admin';
+                    
+                    if (isAdmin) {
                         // Admin can edit
-                        document.getElementById('notesTextarea').removeAttribute('readonly');
+                        const textarea = document.getElementById('notesTextarea');
+                        textarea.removeAttribute('readonly');
+                        textarea.style.backgroundColor = '#ffffff';
+                        textarea.style.cursor = 'text';
+                        textarea.placeholder = 'Masukkan catatan untuk jenis cuti ini...';
+                        
                         document.getElementById('saveNotesBtn').style.display = 'block';
-                        document.getElementById('saveNotesBtn').textContent = 'Simpan Catatan';
+                        document.getElementById('saveNotesBtn').innerHTML = '<i class="fas fa-save mr-2"></i>Simpan Catatan';
                     } else {
                         // User can only view
-                        document.getElementById('notesTextarea').setAttribute('readonly', true);
+                        const textarea = document.getElementById('notesTextarea');
+                        textarea.setAttribute('readonly', true);
+                        textarea.style.backgroundColor = '#f3f4f6';
+                        textarea.style.cursor = 'not-allowed';
+                        textarea.placeholder = 'Hanya admin yang dapat mengedit catatan';
+                        
                         document.getElementById('saveNotesBtn').style.display = 'none';
                     }
+                }).catch(error => {
+                    console.error('Error checking user role for notes:', error);
+                    // Fallback to read-only
+                    const textarea = document.getElementById('notesTextarea');
+                    textarea.setAttribute('readonly', true);
+                    textarea.style.backgroundColor = '#f3f4f6';
+                    document.getElementById('saveNotesBtn').style.display = 'none';
                 });
             } else {
                 // Guest can only view
-                document.getElementById('notesTextarea').setAttribute('readonly', true);
+                const textarea = document.getElementById('notesTextarea');
+                textarea.setAttribute('readonly', true);
+                textarea.style.backgroundColor = '#f3f4f6';
+                textarea.style.cursor = 'not-allowed';
+                textarea.placeholder = 'Login sebagai admin untuk mengedit catatan';
+                
                 document.getElementById('saveNotesBtn').style.display = 'none';
             }
             
@@ -1204,5 +1338,5 @@
         // Call this once to initialize all employee data
         // initializeAllEmployees();
     </script>
-<script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'96fff9507414fd69',t:'MTc1NTMzNzI2NS4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
+<script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'9700366ac4f83da1',t:'MTc1NTMzOTc2Ny4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
 </html>
