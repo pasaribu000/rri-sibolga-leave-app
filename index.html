@@ -24,6 +24,29 @@
             transform: translateY(-5px);
             box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1);
         }
+        .counter-animation {
+            animation: countUp 2s ease-out forwards;
+        }
+        @keyframes countUp {
+            from { transform: scale(0.5); opacity: 0; }
+            to { transform: scale(1); opacity: 1; }
+        }
+        .progress-bar {
+            animation: progressFill 2s ease-out forwards;
+        }
+        @keyframes progressFill {
+            from { width: 0%; }
+        }
+        .floating {
+            animation: floating 3s ease-in-out infinite;
+        }
+        @keyframes floating {
+            0%, 100% { transform: translateY(0px); }
+            50% { transform: translateY(-10px); }
+        }
+        .pulse-slow {
+            animation: pulse 3s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+        }
     </style>
 </head>
 <body class="bg-gradient-to-br from-blue-50 to-indigo-100 min-h-screen">
@@ -131,21 +154,115 @@
 
     <!-- Main Content -->
     <main class="container mx-auto px-6 py-8">
-        <!-- Welcome Section -->
-        <div id="welcomeSection" class="text-center mb-12 fade-in">
-            <h2 class="text-4xl font-bold text-gray-800 mb-4">Selamat Datang di Sistem Manajemen Cuti</h2>
-            <p class="text-xl text-gray-600 mb-8">Radio Republik Indonesia Sibolga</p>
-            
-            <!-- Action Buttons -->
-            <div class="flex flex-col sm:flex-row gap-4 justify-center items-center max-w-2xl mx-auto">
-                <a href="https://forms.gle/qSsd5TUeoeZV6dFP9" target="_blank" 
-                   class="w-full sm:w-auto bg-green-600 hover:bg-green-700 text-white px-8 py-4 rounded-xl font-semibold text-lg transition-all transform hover:scale-105 shadow-lg">
-                    <i class="fas fa-paper-plane mr-3"></i>Ajukan Cuti
-                </a>
-                <a href="https://drive.google.com/drive/folders/1K3HrgnSCTvUbxoYY5fK4XI1cvo4WxANS?usp=sharing" target="_blank" 
-                   class="w-full sm:w-auto bg-blue-600 hover:bg-blue-700 text-white px-8 py-4 rounded-xl font-semibold text-lg transition-all transform hover:scale-105 shadow-lg">
-                    <i class="fas fa-download mr-3"></i>Unduh Persyaratan
-                </a>
+        <!-- Modern Dashboard Header -->
+        <div id="welcomeSection" class="mb-12 fade-in">
+            <!-- Hero Section -->
+            <div class="bg-gradient-to-br from-blue-600 via-purple-600 to-indigo-700 rounded-3xl p-8 md:p-12 text-white shadow-2xl relative overflow-hidden">
+                <!-- Background Pattern -->
+                <div class="absolute inset-0 opacity-10">
+                    <div class="absolute top-0 left-0 w-40 h-40 bg-white rounded-full -translate-x-20 -translate-y-20"></div>
+                    <div class="absolute bottom-0 right-0 w-60 h-60 bg-white rounded-full translate-x-20 translate-y-20"></div>
+                    <div class="absolute top-1/2 left-1/2 w-32 h-32 bg-white rounded-full -translate-x-16 -translate-y-16"></div>
+                </div>
+                
+                <div class="relative z-10 text-center">
+                    <div class="inline-flex items-center justify-center w-20 h-20 bg-white bg-opacity-20 rounded-full mb-6 backdrop-blur-sm">
+                        <i class="fas fa-calendar-alt text-3xl"></i>
+                    </div>
+                    <h1 class="text-4xl md:text-5xl font-bold mb-4">Sistem Manajemen Cuti</h1>
+                    <p class="text-xl md:text-2xl text-blue-100 mb-8">Radio Republik Indonesia Sibolga</p>
+                    
+                    <!-- Action Buttons -->
+                    <div class="flex flex-col sm:flex-row gap-4 justify-center items-center max-w-2xl mx-auto">
+                        <a href="https://forms.gle/qSsd5TUeoeZV6dFP9" target="_blank" 
+                           class="w-full sm:w-auto bg-white text-blue-600 hover:bg-blue-50 px-8 py-4 rounded-xl font-semibold text-lg transition-all transform hover:scale-105 shadow-lg hover:shadow-xl">
+                            <i class="fas fa-paper-plane mr-3"></i>Ajukan Cuti
+                        </a>
+                        <a href="https://drive.google.com/drive/folders/1K3HrgnSCTvUbxoYY5fK4XI1cvo4WxANS?usp=sharing" target="_blank" 
+                           class="w-full sm:w-auto bg-green-500 hover:bg-green-600 text-white px-8 py-4 rounded-xl font-semibold text-lg transition-all transform hover:scale-105 shadow-lg hover:shadow-xl">
+                            <i class="fas fa-download mr-3"></i>Unduh Persyaratan
+                        </a>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Animated Statistics Dashboard -->
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mt-8">
+                <!-- Total Employees Card -->
+                <div class="bg-white rounded-2xl p-6 shadow-lg hover:shadow-xl transition-all duration-300 transform hover:-translate-y-2 border border-gray-100">
+                    <div class="flex items-center justify-between">
+                        <div>
+                            <p class="text-gray-500 text-sm font-medium uppercase tracking-wide">Total Pegawai</p>
+                            <p class="text-3xl font-bold text-gray-800 mt-2" id="totalEmployees">0</p>
+                            <p class="text-green-500 text-sm mt-1">
+                                <i class="fas fa-users mr-1"></i>Aktif
+                            </p>
+                        </div>
+                        <div class="bg-blue-100 p-4 rounded-full">
+                            <i class="fas fa-users text-2xl text-blue-600"></i>
+                        </div>
+                    </div>
+                    <div class="mt-4 bg-blue-50 rounded-lg p-2">
+                        <div class="bg-blue-500 h-2 rounded-full animate-pulse"></div>
+                    </div>
+                </div>
+
+                <!-- Today's Leave Card -->
+                <div class="bg-white rounded-2xl p-6 shadow-lg hover:shadow-xl transition-all duration-300 transform hover:-translate-y-2 border border-gray-100">
+                    <div class="flex items-center justify-between">
+                        <div>
+                            <p class="text-gray-500 text-sm font-medium uppercase tracking-wide">Cuti Hari Ini</p>
+                            <p class="text-3xl font-bold text-gray-800 mt-2" id="todayLeaveCount">0</p>
+                            <p class="text-orange-500 text-sm mt-1">
+                                <i class="fas fa-calendar-day mr-1"></i>Sedang Cuti
+                            </p>
+                        </div>
+                        <div class="bg-orange-100 p-4 rounded-full">
+                            <i class="fas fa-calendar-day text-2xl text-orange-600"></i>
+                        </div>
+                    </div>
+                    <div class="mt-4 bg-orange-50 rounded-lg p-2">
+                        <div class="bg-orange-500 h-2 rounded-full" id="todayLeaveProgress" style="width: 0%"></div>
+                    </div>
+                </div>
+
+                <!-- Most Used Leave Type Card -->
+                <div class="bg-white rounded-2xl p-6 shadow-lg hover:shadow-xl transition-all duration-300 transform hover:-translate-y-2 border border-gray-100">
+                    <div class="flex items-center justify-between">
+                        <div>
+                            <p class="text-gray-500 text-sm font-medium uppercase tracking-wide">Cuti Terbanyak</p>
+                            <p class="text-2xl font-bold text-gray-800 mt-2" id="mostUsedLeaveType">Tahunan</p>
+                            <p class="text-purple-500 text-sm mt-1">
+                                <i class="fas fa-chart-line mr-1"></i><span id="mostUsedLeaveCount">0</span> Total
+                            </p>
+                        </div>
+                        <div class="bg-purple-100 p-4 rounded-full">
+                            <i class="fas fa-chart-bar text-2xl text-purple-600"></i>
+                        </div>
+                    </div>
+                    <div class="mt-4 bg-purple-50 rounded-lg p-2">
+                        <div class="bg-purple-500 h-2 rounded-full animate-pulse"></div>
+                    </div>
+                </div>
+
+                <!-- System Status Card -->
+                <div class="bg-white rounded-2xl p-6 shadow-lg hover:shadow-xl transition-all duration-300 transform hover:-translate-y-2 border border-gray-100">
+                    <div class="flex items-center justify-between">
+                        <div>
+                            <p class="text-gray-500 text-sm font-medium uppercase tracking-wide">Status Sistem</p>
+                            <p class="text-2xl font-bold text-green-600 mt-2">Online</p>
+                            <p class="text-green-500 text-sm mt-1">
+                                <i class="fas fa-check-circle mr-1"></i>Berjalan Normal
+                            </p>
+                        </div>
+                        <div class="bg-green-100 p-4 rounded-full">
+                            <i class="fas fa-server text-2xl text-green-600"></i>
+                        </div>
+                    </div>
+                    <div class="mt-4 bg-green-50 rounded-lg p-2">
+                        <div class="bg-green-500 h-2 rounded-full w-full"></div>
+                    </div>
+                </div>
             </div>
         </div>
 
@@ -359,7 +476,7 @@
             "Ahmad Ridho Siregar, A.Md.T", "Ahlis Jami'ah Damanik, A.Md.Kom", "Deliana Nasution",
             "Widya Sartika Nasution", "Paulus Hadi", "Ahmad Ferdian", "Anhar Rianto Pasaribu",
             "Deny Siahaan", "Abdul Jalil", "Dedi Hariadi", "Edi Suheri",
-            "Muafdan Jega Joyful Rom Sihotang", "James Fransiskus Jonni Sihombing", "Martha Monica Putri Siahaan, S.T",
+            "Muafdan Jega", "Joyful Rom Sihotang", "James Fransiskus", "Jonni Sihombing", "Martha Monica Putri Siahaan, S.T",
             "Erni Sasmita, S.E", "Wilson Pangihutan Siregar", "Welly Boy Simatupang, S.E",
             "Eva Meylina Siahaan", "Flora Susanti Lumbantobing", "Ester Tampubolon",
             "Bernard Adi Saputra Saragih", "Felix Simatupang", "Mukhtadinul Ikhsan",
@@ -396,6 +513,9 @@
             
             // Load employee data for guests immediately
             loadEmployeesForGuests();
+            
+            // Initialize dashboard statistics
+            initializeDashboardStats();
             
             // Auth state observer
             auth.onAuthStateChanged(user => {
@@ -640,6 +760,7 @@
                     employees.push({ id: doc.id, ...doc.data() });
                 });
                 renderEmployees(employees);
+                refreshDashboard(); // Update dashboard stats
             } catch (error) {
                 console.error('Error loading employees:', error);
                 showNotification('Error loading employee data', 'error');
@@ -1371,10 +1492,117 @@
                 </div>
                 ${leaveHTML}
             `;
+            
+            // Update dashboard stats
+            refreshDashboard();
+        }
+
+        // Dashboard Statistics Functions
+        function initializeDashboardStats() {
+            // Animate counters on page load
+            setTimeout(() => {
+                animateCounter('totalEmployees', employeeNames.length, 2000);
+                updateDashboardStats();
+            }, 500);
+        }
+
+        function animateCounter(elementId, targetValue, duration) {
+            const element = document.getElementById(elementId);
+            const startValue = 0;
+            const increment = targetValue / (duration / 16); // 60fps
+            let currentValue = startValue;
+            
+            element.classList.add('counter-animation');
+            
+            const timer = setInterval(() => {
+                currentValue += increment;
+                if (currentValue >= targetValue) {
+                    currentValue = targetValue;
+                    clearInterval(timer);
+                }
+                element.textContent = Math.floor(currentValue);
+            }, 16);
+        }
+
+        function updateDashboardStats() {
+            // Update total employees
+            const totalEmployeesEl = document.getElementById('totalEmployees');
+            totalEmployeesEl.textContent = employeeNames.length;
+            
+            // Update today's leave count
+            const todayLeaveCountEl = document.getElementById('todayLeaveCount');
+            const currentLeaveCount = todayLeaveData.length;
+            todayLeaveCountEl.textContent = currentLeaveCount;
+            
+            // Animate progress bar for today's leave
+            const progressBar = document.getElementById('todayLeaveProgress');
+            const progressPercentage = Math.min((currentLeaveCount / employeeNames.length) * 100, 100);
+            setTimeout(() => {
+                progressBar.style.width = progressPercentage + '%';
+                progressBar.classList.add('progress-bar');
+            }, 1000);
+            
+            // Calculate most used leave type
+            calculateMostUsedLeaveType();
+        }
+
+        async function calculateMostUsedLeaveType() {
+            try {
+                const snapshot = await db.collection('employees').get();
+                const leaveStats = {
+                    'Tahunan': 0,
+                    'Sakit': 0,
+                    'Besar': 0,
+                    'Melahirkan': 0,
+                    'Penting': 0,
+                    'Diluar': 0
+                };
+
+                snapshot.forEach(doc => {
+                    const data = doc.data();
+                    leaveStats['Tahunan'] += data.cutiTahunan || 0;
+                    leaveStats['Sakit'] += data.cutiSakit || 0;
+                    leaveStats['Besar'] += data.cutiBesar || 0;
+                    leaveStats['Melahirkan'] += data.cutiMelahirkan || 0;
+                    leaveStats['Penting'] += data.cutiPenting || 0;
+                    leaveStats['Diluar'] += data.cutiDiluar || 0;
+                });
+
+                // Find most used leave type
+                let mostUsedType = 'Tahunan';
+                let maxCount = 0;
+                
+                for (const [type, count] of Object.entries(leaveStats)) {
+                    if (count > maxCount) {
+                        maxCount = count;
+                        mostUsedType = type;
+                    }
+                }
+
+                // Update UI
+                document.getElementById('mostUsedLeaveType').textContent = mostUsedType;
+                document.getElementById('mostUsedLeaveCount').textContent = maxCount;
+                
+                // Animate the counter
+                setTimeout(() => {
+                    animateCounter('mostUsedLeaveCount', maxCount, 1500);
+                }, 1500);
+                
+            } catch (error) {
+                console.error('Error calculating leave statistics:', error);
+                // Set default values
+                document.getElementById('mostUsedLeaveType').textContent = 'Tahunan';
+                document.getElementById('mostUsedLeaveCount').textContent = '0';
+            }
+        }
+
+        // Update dashboard when data changes
+        function refreshDashboard() {
+            updateDashboardStats();
         }
 
         // Call this once to initialize all employee data
         // initializeAllEmployees();
     </script>
-<script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'97006cdbd34ec826',t:'MTc1NTM0MTk5Ny4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
+<script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'97008183670455fc',t:'MTc1NTM0Mjg0My4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
 </html>
