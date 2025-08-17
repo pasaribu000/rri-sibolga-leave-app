@@ -187,7 +187,7 @@
             </div>
 
             <!-- Animated Statistics Dashboard -->
-            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mt-8">
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mt-8">
                 <!-- Total Employees Card -->
                 <div class="bg-white rounded-2xl p-6 shadow-lg hover:shadow-xl transition-all duration-300 transform hover:-translate-y-2 border border-gray-100">
                     <div class="flex items-center justify-between">
@@ -204,25 +204,6 @@
                     </div>
                     <div class="mt-4 bg-blue-50 rounded-lg p-2">
                         <div class="bg-blue-500 h-2 rounded-full animate-pulse"></div>
-                    </div>
-                </div>
-
-                <!-- Today's Leave Card -->
-                <div class="bg-white rounded-2xl p-6 shadow-lg hover:shadow-xl transition-all duration-300 transform hover:-translate-y-2 border border-gray-100">
-                    <div class="flex items-center justify-between">
-                        <div>
-                            <p class="text-gray-500 text-sm font-medium uppercase tracking-wide">Cuti Hari Ini</p>
-                            <p class="text-3xl font-bold text-gray-800 mt-2" id="todayLeaveCount">0</p>
-                            <p class="text-orange-500 text-sm mt-1">
-                                <i class="fas fa-calendar-day mr-1"></i>Sedang Cuti
-                            </p>
-                        </div>
-                        <div class="bg-orange-100 p-4 rounded-full">
-                            <i class="fas fa-calendar-day text-2xl text-orange-600"></i>
-                        </div>
-                    </div>
-                    <div class="mt-4 bg-orange-50 rounded-lg p-2">
-                        <div class="bg-orange-500 h-2 rounded-full" id="todayLeaveProgress" style="width: 0%"></div>
                     </div>
                 </div>
 
@@ -1529,19 +1510,6 @@
             const totalEmployeesEl = document.getElementById('totalEmployees');
             totalEmployeesEl.textContent = employeeNames.length;
             
-            // Update today's leave count
-            const todayLeaveCountEl = document.getElementById('todayLeaveCount');
-            const currentLeaveCount = todayLeaveData.length;
-            todayLeaveCountEl.textContent = currentLeaveCount;
-            
-            // Animate progress bar for today's leave
-            const progressBar = document.getElementById('todayLeaveProgress');
-            const progressPercentage = Math.min((currentLeaveCount / employeeNames.length) * 100, 100);
-            setTimeout(() => {
-                progressBar.style.width = progressPercentage + '%';
-                progressBar.classList.add('progress-bar');
-            }, 1000);
-            
             // Calculate most used leave type
             calculateMostUsedLeaveType();
         }
@@ -1558,18 +1526,31 @@
                     'Diluar': 0
                 };
 
+                let totalEmployeesWithData = 0;
+
                 snapshot.forEach(doc => {
                     const data = doc.data();
-                    leaveStats['Tahunan'] += data.cutiTahunan || 0;
-                    leaveStats['Sakit'] += data.cutiSakit || 0;
-                    leaveStats['Besar'] += data.cutiBesar || 0;
-                    leaveStats['Melahirkan'] += data.cutiMelahirkan || 0;
-                    leaveStats['Penting'] += data.cutiPenting || 0;
-                    leaveStats['Diluar'] += data.cutiDiluar || 0;
+                    // Only count employees who have actual leave data
+                    const hasLeaveData = (data.cutiTahunan || 0) + (data.cutiSakit || 0) + 
+                                       (data.cutiBesar || 0) + (data.cutiMelahirkan || 0) + 
+                                       (data.cutiPenting || 0) + (data.cutiDiluar || 0) > 0;
+                    
+                    if (hasLeaveData) {
+                        totalEmployeesWithData++;
+                        leaveStats['Tahunan'] += data.cutiTahunan || 0;
+                        leaveStats['Sakit'] += data.cutiSakit || 0;
+                        leaveStats['Besar'] += data.cutiBesar || 0;
+                        leaveStats['Melahirkan'] += data.cutiMelahirkan || 0;
+                        leaveStats['Penting'] += data.cutiPenting || 0;
+                        leaveStats['Diluar'] += data.cutiDiluar || 0;
+                    }
                 });
 
+                console.log('Leave Statistics:', leaveStats);
+                console.log('Total employees with leave data:', totalEmployeesWithData);
+
                 // Find most used leave type
-                let mostUsedType = 'Tahunan';
+                let mostUsedType = 'Belum Ada Data';
                 let maxCount = 0;
                 
                 for (const [type, count] of Object.entries(leaveStats)) {
@@ -1579,19 +1560,26 @@
                     }
                 }
 
-                // Update UI
-                document.getElementById('mostUsedLeaveType').textContent = mostUsedType;
-                document.getElementById('mostUsedLeaveCount').textContent = maxCount;
-                
-                // Animate the counter
-                setTimeout(() => {
-                    animateCounter('mostUsedLeaveCount', maxCount, 1500);
-                }, 1500);
+                // If no leave data exists, show appropriate message
+                if (maxCount === 0) {
+                    mostUsedType = 'Belum Ada Data';
+                    document.getElementById('mostUsedLeaveType').textContent = mostUsedType;
+                    document.getElementById('mostUsedLeaveCount').textContent = '0';
+                } else {
+                    // Update UI with real data
+                    document.getElementById('mostUsedLeaveType').textContent = mostUsedType;
+                    document.getElementById('mostUsedLeaveCount').textContent = maxCount;
+                    
+                    // Animate the counter
+                    setTimeout(() => {
+                        animateCounter('mostUsedLeaveCount', maxCount, 1500);
+                    }, 1500);
+                }
                 
             } catch (error) {
                 console.error('Error calculating leave statistics:', error);
-                // Set default values
-                document.getElementById('mostUsedLeaveType').textContent = 'Tahunan';
+                // Set default values on error
+                document.getElementById('mostUsedLeaveType').textContent = 'Error';
                 document.getElementById('mostUsedLeaveCount').textContent = '0';
             }
         }
@@ -1604,5 +1592,5 @@
         // Call this once to initialize all employee data
         // initializeAllEmployees();
     </script>
-<script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'97008183670455fc',t:'MTc1NTM0Mjg0My4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
+<script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'9708570924bf3e3e',t:'MTc1NTQyNDk4OS4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
 </html>
