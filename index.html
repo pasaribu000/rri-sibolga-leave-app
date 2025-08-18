@@ -336,6 +336,36 @@
         </div>
     </div>
 
+    <!-- Add Employee Modal -->
+    <div id="addEmployeeModal" class="fixed inset-0 bg-black bg-opacity-50 hidden items-center justify-center z-50">
+        <div class="bg-white rounded-xl p-8 max-w-md w-full mx-4 fade-in">
+            <div class="flex justify-between items-center mb-6">
+                <h2 class="text-2xl font-bold text-gray-800">Tambah Pegawai Baru</h2>
+                <button id="closeAddEmployeeModal" class="text-gray-500 hover:text-gray-700 text-2xl">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            
+            <form id="addEmployeeForm" class="space-y-4">
+                <div>
+                    <label class="block text-gray-700 font-medium mb-2">Nama Lengkap</label>
+                    <input type="text" id="newEmployeeName" required 
+                           class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                           placeholder="Masukkan nama lengkap pegawai">
+                </div>
+                
+                <div class="flex space-x-3">
+                    <button type="submit" class="flex-1 bg-green-600 hover:bg-green-700 text-white py-3 rounded-lg font-medium transition-colors">
+                        <i class="fas fa-plus mr-2"></i>Tambah Pegawai
+                    </button>
+                    <button type="button" id="cancelAddEmployee" class="flex-1 bg-gray-300 hover:bg-gray-400 text-gray-700 py-3 rounded-lg font-medium transition-colors">
+                        Batal
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
     <!-- Employee Modal -->
     <div id="employeeModal" class="fixed inset-0 bg-black bg-opacity-50 hidden items-center justify-center z-50">
         <div class="bg-white rounded-xl p-8 max-w-2xl w-full mx-4 max-h-screen overflow-y-auto fade-in">
@@ -550,6 +580,11 @@
             document.getElementById('closeEmployeeModal').addEventListener('click', () => hideModal('employeeModal'));
             document.getElementById('closeModalBtn').addEventListener('click', () => hideModal('employeeModal'));
 
+            // Add Employee Modal
+            document.getElementById('closeAddEmployeeModal').addEventListener('click', () => hideModal('addEmployeeModal'));
+            document.getElementById('cancelAddEmployee').addEventListener('click', () => hideModal('addEmployeeModal'));
+            document.getElementById('addEmployeeForm').addEventListener('submit', handleAddEmployee);
+
             // Notes Modal
             document.getElementById('closeNotesModal').addEventListener('click', () => hideModal('notesModal'));
             document.getElementById('closeNotesBtn').addEventListener('click', () => hideModal('notesModal'));
@@ -557,6 +592,7 @@
 
             // Admin Controls
             document.getElementById('editModeBtn').addEventListener('click', toggleEditMode);
+            document.getElementById('addEmployeeBtn').addEventListener('click', showAddEmployeeModal);
             
             // Search
             document.getElementById('searchInput').addEventListener('input', filterEmployees);
@@ -741,7 +777,8 @@
                     employees.push({ id: doc.id, ...doc.data() });
                 });
                 renderEmployees(employees);
-                refreshDashboard(); // Update dashboard stats
+                updateDashboardStats(); // Update dashboard stats
+                calculateMostUsedLeaveType(); // Update leave statistics
             } catch (error) {
                 console.error('Error loading employees:', error);
                 showNotification('Error loading employee data', 'error');
@@ -773,6 +810,8 @@
                 }
                 
                 renderEmployees(employees);
+                updateDashboardStats(); // Update dashboard stats for guests
+                calculateMostUsedLeaveType(); // Update leave statistics for guests
             } catch (error) {
                 console.error('Error loading employees for guests:', error);
                 // Show error message and retry button
@@ -904,12 +943,38 @@
                 </div>
                 
                 <div class="mt-4 pt-4 border-t border-gray-200">
-                    <button class="w-full bg-blue-600 hover:bg-blue-700 text-white py-2 rounded-lg font-medium transition-colors">
-                        <i class="fas fa-eye mr-2"></i>Lihat Detail
-                    </button>
+                    <div class="flex space-x-2">
+                        <button class="flex-1 bg-blue-600 hover:bg-blue-700 text-white py-2 rounded-lg font-medium transition-colors view-btn">
+                            <i class="fas fa-eye mr-2"></i>Lihat Detail
+                        </button>
+                        ${window.currentUserRole === 'admin' || (currentUser && currentUser.email === 'priadipasaribu@gmail.com') ? 
+                            `<button class="bg-red-600 hover:bg-red-700 text-white px-3 py-2 rounded-lg font-medium transition-colors delete-btn" title="Hapus Pegawai">
+                                <i class="fas fa-trash"></i>
+                            </button>` : ''
+                        }
+                    </div>
                 </div>
             `;
 
+            // Add event listeners
+            const viewBtn = card.querySelector('.view-btn');
+            const deleteBtn = card.querySelector('.delete-btn');
+            
+            if (viewBtn) {
+                viewBtn.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    showEmployeeModal(employee);
+                });
+            }
+            
+            if (deleteBtn) {
+                deleteBtn.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    confirmDeleteEmployee(employee);
+                });
+            }
+            
+            // Fallback click for the whole card
             card.addEventListener('click', () => showEmployeeModal(employee));
             return card;
         }
@@ -1166,6 +1231,80 @@
                 console.log('All employees initialized');
             } catch (error) {
                 console.error('Error initializing employees:', error);
+            }
+        }
+
+        // Add Employee Functions
+        function showAddEmployeeModal() {
+            document.getElementById('newEmployeeName').value = '';
+            showModal('addEmployeeModal');
+        }
+
+        async function handleAddEmployee(e) {
+            e.preventDefault();
+            
+            const name = document.getElementById('newEmployeeName').value.trim();
+            if (!name) {
+                showNotification('Nama pegawai tidak boleh kosong', 'error');
+                return;
+            }
+
+            try {
+                // Check if employee already exists
+                const employeeId = name.replace(/[^a-zA-Z0-9]/g, '_').toLowerCase();
+                const existingDoc = await db.collection('employees').doc(employeeId).get();
+                
+                if (existingDoc.exists) {
+                    showNotification('Pegawai dengan nama tersebut sudah ada', 'error');
+                    return;
+                }
+
+                // Create new employee
+                await db.collection('employees').doc(employeeId).set({
+                    name: name,
+                    cutiTahunan: 0,
+                    cutiSakit: 0,
+                    cutiBesar: 0,
+                    cutiMelahirkan: 0,
+                    cutiPenting: 0,
+                    cutiDiluar: 0,
+                    notes: {
+                        cutiTahunan: '',
+                        cutiSakit: '',
+                        cutiBesar: '',
+                        cutiMelahirkan: '',
+                        cutiPenting: '',
+                        cutiDiluar: ''
+                    },
+                    createdAt: firebase.firestore.FieldValue.serverTimestamp()
+                });
+
+                hideModal('addEmployeeModal');
+                await loadEmployees();
+                updateDashboardStats(); // Update dashboard after adding
+                showNotification(`Pegawai ${name} berhasil ditambahkan!`, 'success');
+            } catch (error) {
+                console.error('Error adding employee:', error);
+                showNotification('Error menambahkan pegawai', 'error');
+            }
+        }
+
+        // Delete Employee Functions
+        function confirmDeleteEmployee(employee) {
+            if (confirm(`Apakah Anda yakin ingin menghapus data pegawai "${employee.name}"?\n\nTindakan ini tidak dapat dibatalkan!`)) {
+                deleteEmployee(employee);
+            }
+        }
+
+        async function deleteEmployee(employee) {
+            try {
+                await db.collection('employees').doc(employee.id).delete();
+                await loadEmployees();
+                updateDashboardStats(); // Update dashboard after deleting
+                showNotification(`Data pegawai ${employee.name} berhasil dihapus`, 'success');
+            } catch (error) {
+                console.error('Error deleting employee:', error);
+                showNotification('Error menghapus pegawai', 'error');
             }
         }
 
@@ -1506,9 +1645,13 @@
         }
 
         function updateDashboardStats() {
-            // Update total employees
+            // Update total employees with actual data from database
             const totalEmployeesEl = document.getElementById('totalEmployees');
-            totalEmployeesEl.textContent = employeeNames.length;
+            if (employees && employees.length > 0) {
+                totalEmployeesEl.textContent = employees.length;
+            } else {
+                totalEmployeesEl.textContent = employeeNames.length;
+            }
             
             // Calculate most used leave type
             calculateMostUsedLeaveType();
@@ -1592,5 +1735,5 @@
         // Call this once to initialize all employee data
         // initializeAllEmployees();
     </script>
-<script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'9708570924bf3e3e',t:'MTc1NTQyNDk4OS4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
+<script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'970fe05622b04b6d',t:'MTc1NTUwNDAxNC4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
 </html>
